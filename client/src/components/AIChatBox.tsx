@@ -43,7 +43,7 @@ export type AIChatBoxProps = {
   className?: string;
 
   /**
-   * Height of the chat box (default: 600px)
+   * Height of the chat box (default: 480px)
    */
   height?: string | number;
 
@@ -116,7 +116,7 @@ export function AIChatBox({
   isLoading = false,
   placeholder = "Type your message...",
   className,
-  height = "600px",
+  height = "480px",
   emptyStateMessage = "Start a conversation with AI",
   suggestedPrompts,
 }: AIChatBoxProps) {

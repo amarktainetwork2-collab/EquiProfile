@@ -1005,6 +1005,49 @@ function DashboardContent() {
           </Card>
         </div>
       </motion.div>
+
+      {/* ── Module Grid ──────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.34 }}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="font-serif text-lg font-semibold">Your Modules</h2>
+          <p className="text-xs text-muted-foreground">Quick access</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {moduleCategories
+            .filter(
+              (cat) =>
+                cat.id !== "stable" || subscription?.planTier === "stable",
+            )
+            .map((cat, i) => (
+              <PremiumModuleCard key={cat.id} category={cat} index={i} />
+            ))}
+        </div>
+        {subscription?.planTier !== "stable" && (
+          <div className="mt-4 p-4 rounded-xl border border-yellow-500/20 bg-yellow-50/30 dark:bg-yellow-900/10 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">
+                Stable Plan Features
+              </p>
+              <p className="text-xs text-yellow-700/70 dark:text-yellow-400/70">
+                Unlock team management, client portal & staff tools
+              </p>
+            </div>
+            <Link href="/billing">
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-yellow-500/30 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/20"
+              >
+                Upgrade
+              </Button>
+            </Link>
+          </div>
+        )}
+      </motion.div>
     </div>
   );
 }
