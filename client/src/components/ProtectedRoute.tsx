@@ -11,12 +11,15 @@ interface ProtectedRouteProps {
 
 /**
  * Protected route wrapper
- * 
+ *
  * Ensures user is authenticated before rendering children.
  * Redirects to login if not authenticated.
  * Optionally can require admin role.
  */
-export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  children,
+  requireAdmin = false,
+}: ProtectedRouteProps) {
   const { user, loading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -24,16 +27,24 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     if (loading) return;
 
     if (!isAuthenticated) {
-      // Redirect to login with return URL
-      const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-      const loginUrl = getLoginUrl();
-      window.location.href = `${loginUrl}&returnUrl=${returnUrl}`;
+      // Redirect to login. If OAuth is configured use the OAuth URL,
+      // otherwise fall back to the built-in /login route so we never
+      // produce an invalid URL (which causes a 404).
+      const oauthUrl = getLoginUrl();
+      const baseUrl = oauthUrl || "/login";
+      const returnUrl = encodeURIComponent(
+        window.location.pathname + window.location.search,
+      );
+      const loginUrl = oauthUrl
+        ? `${oauthUrl}&returnUrl=${returnUrl}`
+        : `/login?returnUrl=${returnUrl}`;
+      window.location.href = loginUrl;
       return;
     }
 
-    if (requireAdmin && user?.role !== 'admin') {
+    if (requireAdmin && user?.role !== "admin") {
       // Redirect to dashboard if user is not admin
-      setLocation('/dashboard');
+      setLocation("/dashboard");
     }
   }, [loading, isAuthenticated, requireAdmin, user, setLocation]);
 
@@ -55,7 +66,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   }
 
   // Don't render if admin required but user is not admin
-  if (requireAdmin && user?.role !== 'admin') {
+  if (requireAdmin && user?.role !== "admin") {
     return null;
   }
 
