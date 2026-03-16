@@ -67,6 +67,8 @@ import {
   Building2,
   Briefcase,
   UserCog,
+  Navigation,
+  ShoppingCart,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -74,6 +76,7 @@ import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 import { trpc } from "@/lib/trpc";
 import { ThemeToggle } from "./ThemeToggle";
+import { NotificationCenter } from "./NotificationCenter";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -142,6 +145,7 @@ const moreModuleGroups = [
       { icon: BookOpen, label: "Templates", path: "/training-templates" },
       { icon: Users, label: "Lessons", path: "/lessons" },
       { icon: Baby, label: "Breeding", path: "/breeding" },
+      { icon: Navigation, label: "GPS Ride Tracking", path: "/ride-tracking" },
     ],
   },
   {
@@ -150,6 +154,7 @@ const moreModuleGroups = [
       { icon: Apple, label: "Feeding Plans", path: "/feeding" },
       { icon: FileText, label: "Nutrition Plans", path: "/nutrition-plans" },
       { icon: BookOpen, label: "Nutrition Logs", path: "/nutrition-logs" },
+      { icon: ShoppingCart, label: "Feed Costs", path: "/feed-costs" },
     ],
   },
   {
@@ -165,6 +170,7 @@ const moreModuleGroups = [
       { icon: Brain, label: "AI Assistant", path: "/ai-chat" },
       { icon: Cloud, label: "Weather", path: "/weather" },
       { icon: GitBranch, label: "Pedigree", path: "/pedigree" },
+      { icon: Shield, label: "Equine Passport", path: "/equine-passport" },
     ],
   },
   {
@@ -443,6 +449,7 @@ function DashboardLayoutContent({
           <SidebarFooter className="p-3">
             <div className="flex items-center justify-between gap-2 px-1 mb-2 group-data-[collapsible=icon]:justify-center">
               <ThemeToggle />
+              <NotificationCenter />
             </div>
             {/* Admin-only build fingerprint */}
             {adminStatus?.isUnlocked && buildInfo && !isCollapsed && (
@@ -510,7 +517,10 @@ function DashboardLayoutContent({
                 </div>
               </div>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <NotificationCenter />
+              <ThemeToggle />
+            </div>
           </div>
         )}
         <main className={`flex-1 p-4 ${isMobile ? "pb-20" : ""}`}>

@@ -16,6 +16,7 @@ import { useUpgradeModal } from "./hooks/useUpgradeModal";
 import { ProtectedRoute, StableRoute } from "./components/ProtectedRoute";
 import { SalesChatWidget } from "./components/SalesChatWidget";
 import { CookieConsent } from "./components/CookieConsent";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import "./i18n/config";
 
 // Marketing Pages (Public) — kept eager for fast initial paint on public routes
@@ -73,6 +74,9 @@ const Vaccinations = lazy(() => import("./pages/Vaccinations"));
 const DentalCare = lazy(() => import("./pages/DentalCare"));
 const Dewormings = lazy(() => import("./pages/Dewormings"));
 const Tags = lazy(() => import("./pages/Tags"));
+const FeedCostTracking = lazy(() => import("./pages/FeedCostTracking"));
+const RideTracking = lazy(() => import("./pages/RideTracking"));
+const EquinePassport = lazy(() => import("./pages/EquinePassport"));
 
 // Minimal spinner shown while lazy chunks load (doesn't block FCP)
 function PageSpinner() {
@@ -238,6 +242,27 @@ function Router() {
               </ProtectedRoute>
             </Route>
 
+            {/* Feed Cost Tracking */}
+            <Route path="/feed-costs">
+              <ProtectedRoute>
+                <FeedCostTracking />
+              </ProtectedRoute>
+            </Route>
+
+            {/* GPS Ride Tracking */}
+            <Route path="/ride-tracking">
+              <ProtectedRoute>
+                <RideTracking />
+              </ProtectedRoute>
+            </Route>
+
+            {/* Equine Passport */}
+            <Route path="/equine-passport">
+              <ProtectedRoute>
+                <EquinePassport />
+              </ProtectedRoute>
+            </Route>
+
             {/* Documents */}
             <Route path="/documents">
               <ProtectedRoute>
@@ -369,6 +394,7 @@ function App() {
           <Toaster />
           <Router />
           <SalesChatWidget />
+          <PWAInstallPrompt />
           <CookieConsent />
         </TooltipProvider>
       </ThemeProvider>

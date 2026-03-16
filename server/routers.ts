@@ -5398,6 +5398,143 @@ Format your response as JSON with keys: recommendation, explanation, precautions
         return { success: true };
       }),
   }),
+
+  // Feed Cost Tracking
+  feedCosts: router({
+    list: protectedProcedure
+      .input(
+        z
+          .object({
+            horseId: z.number().optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return [];
+
+        const conditions = [eq(feedCosts.userId, ctx.user.id)];
+        if (input?.horseId) {
+          conditions.push(eq(feedCosts.horseId, input.horseId));
+        }
+
+        return db
+          .select()
+          .from(feedCosts)
+          .where(and(...conditions))
+          .orderBy(desc(feedCosts.purchaseDate));
+      }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          horseId: z.number().optional(),
+          feedType: z.string().min(1),
+          brandName: z.string().optional(),
+          quantity: z.string().min(1),
+          unit: z.string().optional(),
+          costPerUnit: z.number().min(0),
+          purchaseDate: z.string(),
+          supplier: z.string().optional(),
+          notes: z.string().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        const [result] = await db.insert(feedCosts).values({
+          userId: ctx.user.id,
+          horseId: input.horseId ?? null,
+          feedType: input.feedType,
+          brandName: input.brandName ?? null,
+          quantity: input.quantity,
+          unit: input.unit ?? null,
+          costPerUnit: input.costPerUnit,
+          purchaseDate: new Date(input.purchaseDate),
+          supplier: input.supplier ?? null,
+          notes: input.notes ?? null,
+        });
+
+        const { publishModuleEvent } = await import("./_core/realtime");
+        publishModuleEvent(
+          "feedCosts",
+          "created",
+          { id: result.insertId, ...input },
+          ctx.user.id,
+        );
+
+        return { id: result.insertId, success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        await db
+          .delete(feedCosts)
+          .where(
+            and(eq(feedCosts.id, input.id), eq(feedCosts.userId, ctx.user.id)),
+          );
+
+        const { publishModuleEvent } = await import("./_core/realtime");
+        publishModuleEvent(
+          "feedCosts",
+          "deleted",
+          { id: input.id },
+          ctx.user.id,
+        );
+
+        return { success: true };
+      }),
+
+    summary: protectedProcedure
+      .input(
+        z
+          .object({
+            horseId: z.number().optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return null;
+
+        const conditions = [eq(feedCosts.userId, ctx.user.id)];
+        if (input?.horseId) {
+          conditions.push(eq(feedCosts.horseId, input.horseId));
+        }
+
+        const result = await db
+          .select({
+            totalSpent: sql<number>`COALESCE(SUM(costPerUnit), 0)`,
+            recordCount: sql<number>`COUNT(*)`,
+            avgCost: sql<number>`COALESCE(AVG(costPerUnit), 0)`,
+          })
+          .from(feedCosts)
+          .where(and(...conditions));
+
+        // Per-horse breakdown
+        const perHorse = await db
+          .select({
+            horseId: feedCosts.horseId,
+            totalSpent: sql<number>`COALESCE(SUM(costPerUnit), 0)`,
+            recordCount: sql<number>`COUNT(*)`,
+          })
+          .from(feedCosts)
+          .where(eq(feedCosts.userId, ctx.user.id))
+          .groupBy(feedCosts.horseId);
+
+        return {
+          totalSpent: result[0]?.totalSpent || 0,
+          recordCount: result[0]?.recordCount || 0,
+          avgCost: result[0]?.avgCost || 0,
+          perHorse,
+        };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
