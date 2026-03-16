@@ -15,6 +15,10 @@ import {
   CheckCircle,
   AlertTriangle,
   XCircle,
+  Dumbbell,
+  Target,
+  Clock,
+  Shield,
 } from "lucide-react";
 
 function WeatherContent() {
@@ -64,6 +68,136 @@ function WeatherContent() {
       default:
         return <CloudSun className="w-5 h-5" />;
     }
+  };
+
+  const getTrainingRecommendations = (weather: typeof currentWeather) => {
+    if (!weather) return [];
+    const { temperature, windSpeed, precipitation } = weather.weather;
+    const level = weather.advice.level;
+
+    const recs: Array<{
+      activity: string;
+      advice: string;
+      suitable: boolean;
+      duration?: string;
+      icon: React.ReactNode;
+    }> = [];
+
+    // Flatwork / Dressage
+    if (level === "excellent" || level === "good") {
+      recs.push({
+        activity: "Flatwork / Dressage",
+        advice:
+          "Great conditions for focused flatwork. Ideal for schooling lateral work, transitions, and collection exercises.",
+        suitable: true,
+        duration: "45-60 minutes",
+        icon: <Target className="w-4 h-4 text-green-600 dark:text-green-400" />,
+      });
+    } else if (level === "fair") {
+      recs.push({
+        activity: "Flatwork / Dressage",
+        advice:
+          "Conditions are workable but allow extra warm-up time. Shorten the session if the horse becomes tense.",
+        suitable: true,
+        duration: "30-40 minutes",
+        icon: <Target className="w-4 h-4 text-amber-600 dark:text-amber-400" />,
+      });
+    } else {
+      recs.push({
+        activity: "Flatwork / Dressage",
+        advice:
+          "Consider indoor arena work only. If riding outdoors, keep it very short and focus on walk work.",
+        suitable: false,
+        duration: "15-20 minutes max",
+        icon: <Target className="w-4 h-4 text-amber-600 dark:text-amber-400" />,
+      });
+    }
+
+    // Jumping
+    if (level === "excellent") {
+      recs.push({
+        activity: "Jumping / Grid Work",
+        advice:
+          "Perfect conditions for jumping. Good footing and calm air make this ideal for gymnastic exercises.",
+        suitable: true,
+        duration: "30-45 minutes",
+        icon: (
+          <Dumbbell className="w-4 h-4 text-green-600 dark:text-green-400" />
+        ),
+      });
+    } else if (windSpeed > 25 || precipitation > 2) {
+      recs.push({
+        activity: "Jumping / Grid Work",
+        advice:
+          "Not recommended — wind or wet ground increases risk of slips and refusals. Switch to ground poles or flatwork.",
+        suitable: false,
+        icon: (
+          <Dumbbell className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        ),
+      });
+    } else {
+      recs.push({
+        activity: "Jumping / Grid Work",
+        advice:
+          "Possible with caution. Lower jump heights and avoid technical combinations in current conditions.",
+        suitable: true,
+        duration: "20-30 minutes",
+        icon: (
+          <Dumbbell className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        ),
+      });
+    }
+
+    // Hacking / Trail
+    if (level === "excellent" || level === "good") {
+      recs.push({
+        activity: "Hacking / Trail Ride",
+        advice:
+          "Lovely weather for a hack. Roads and trails should be in good condition. Enjoy the ride!",
+        suitable: true,
+        duration: "60-90 minutes",
+        icon: (
+          <CloudSun className="w-4 h-4 text-green-600 dark:text-green-400" />
+        ),
+      });
+    } else if (windSpeed > 30) {
+      recs.push({
+        activity: "Hacking / Trail Ride",
+        advice:
+          "High winds make hacking risky — flying debris and road noise can spook horses. Stay in the arena.",
+        suitable: false,
+        icon: (
+          <CloudSun className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        ),
+      });
+    } else {
+      recs.push({
+        activity: "Hacking / Trail Ride",
+        advice:
+          "Possible but stick to familiar routes. Wear hi-vis and avoid waterlogged paths.",
+        suitable: true,
+        duration: "30-45 minutes",
+        icon: (
+          <CloudSun className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        ),
+      });
+    }
+
+    // Lunging / Groundwork
+    recs.push({
+      activity: "Lunging / Groundwork",
+      advice:
+        temperature < 5
+          ? "Groundwork is a good option in cold weather — lunging helps warm up muscles safely before ridden work."
+          : temperature > 30
+            ? "Keep lunging sessions short in the heat. Focus on walk and trot, avoid extended canter work."
+            : "Good conditions for groundwork. Use lunging to improve balance and obedience before riding.",
+      suitable: true,
+      duration: temperature > 30 ? "15-20 minutes" : "20-30 minutes",
+      icon: <Shield className="w-4 h-4 text-green-600 dark:text-green-400" />,
+    });
+
+    return recs;
   };
 
   return (
@@ -245,6 +379,62 @@ function WeatherContent() {
           </CardContent>
         </Card>
       ) : null}
+
+      {/* Weather-Based Training Recommendations */}
+      {currentWeather && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Dumbbell className="w-5 h-5 text-indigo-500" />
+              AI Training Recommendations
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Intelligent training suggestions based on current weather
+              conditions
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-4">
+              {getTrainingRecommendations(currentWeather).map((rec, i) => (
+                <div
+                  key={i}
+                  className={`p-4 rounded-lg border ${rec.suitable ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800" : "bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800"}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`p-2 rounded-lg ${rec.suitable ? "bg-green-100 dark:bg-green-900/40" : "bg-amber-100 dark:bg-amber-900/40"}`}
+                    >
+                      {rec.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-sm">
+                          {rec.activity}
+                        </span>
+                        <Badge
+                          variant={rec.suitable ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          {rec.suitable ? "Recommended" : "Adjust"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {rec.advice}
+                      </p>
+                      {rec.duration && (
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> Suggested:{" "}
+                          {rec.duration}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Riding Tips */}
       <Card>

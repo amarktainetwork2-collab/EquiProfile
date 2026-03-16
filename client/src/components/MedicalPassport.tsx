@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { QrCode, Download, Share2, Printer } from "lucide-react";
+import { QrCode, Download, Share2, Printer, Shield } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { generateQRCode } from "../lib/utils/qrcode";
@@ -15,6 +15,14 @@ interface MedicalPassportProps {
     age?: number;
     microchipNumber?: string;
     registrationNumber?: string;
+    // FEI/BEF passport fields
+    passportNumber?: string;
+    feiId?: string;
+    ueln?: string;
+    color?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    height?: string | number;
   };
   vaccinations?: Array<{
     vaccineName: string;
@@ -105,7 +113,13 @@ export function MedicalPassport({
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl">Medical Passport</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-2xl">Equine Passport</CardTitle>
+                <Badge variant="outline" className="text-xs">
+                  <Shield className="w-3 h-3 mr-1" />
+                  FEI/BEF Compliant
+                </Badge>
+              </div>
               <p className="text-muted-foreground mt-1">{horse.name}</p>
             </div>
             {qrCodeUrl && (
@@ -114,30 +128,41 @@ export function MedicalPassport({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Horse Information */}
+          {/* Passport Identification (FEI/BEF Section I) */}
           <section>
-            <h3 className="font-semibold text-lg mb-3">Horse Information</h3>
+            <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-blue-500" />
+              Passport Identification
+            </h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Name:</span>
-                <span className="ml-2 font-medium">{horse.name}</span>
-              </div>
-              {horse.breed && (
+              {horse.passportNumber && (
                 <div>
-                  <span className="text-muted-foreground">Breed:</span>
-                  <span className="ml-2 font-medium">{horse.breed}</span>
+                  <span className="text-muted-foreground">Passport No:</span>
+                  <span className="ml-2 font-medium font-mono">
+                    {horse.passportNumber}
+                  </span>
                 </div>
               )}
-              {horse.age && (
+              {horse.feiId && (
                 <div>
-                  <span className="text-muted-foreground">Age:</span>
-                  <span className="ml-2 font-medium">{horse.age} years</span>
+                  <span className="text-muted-foreground">FEI ID:</span>
+                  <span className="ml-2 font-medium font-mono">
+                    {horse.feiId}
+                  </span>
+                </div>
+              )}
+              {horse.ueln && (
+                <div>
+                  <span className="text-muted-foreground">UELN:</span>
+                  <span className="ml-2 font-medium font-mono">
+                    {horse.ueln}
+                  </span>
                 </div>
               )}
               {horse.microchipNumber && (
                 <div>
                   <span className="text-muted-foreground">Microchip:</span>
-                  <span className="ml-2 font-medium">
+                  <span className="ml-2 font-medium font-mono">
                     {horse.microchipNumber}
                   </span>
                 </div>
@@ -153,9 +178,66 @@ export function MedicalPassport({
             </div>
           </section>
 
-          {/* Vaccinations */}
+          {/* Horse Information (FEI/BEF Section II — Signalement) */}
           <section>
-            <h3 className="font-semibold text-lg mb-3">Vaccinations</h3>
+            <h3 className="font-semibold text-lg mb-3">
+              Horse Identification (Signalement)
+            </h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">Name:</span>
+                <span className="ml-2 font-medium">{horse.name}</span>
+              </div>
+              {horse.breed && (
+                <div>
+                  <span className="text-muted-foreground">Breed:</span>
+                  <span className="ml-2 font-medium">{horse.breed}</span>
+                </div>
+              )}
+              {horse.color && (
+                <div>
+                  <span className="text-muted-foreground">Colour:</span>
+                  <span className="ml-2 font-medium">{horse.color}</span>
+                </div>
+              )}
+              {horse.gender && (
+                <div>
+                  <span className="text-muted-foreground">Sex:</span>
+                  <span className="ml-2 font-medium">{horse.gender}</span>
+                </div>
+              )}
+              {horse.dateOfBirth && (
+                <div>
+                  <span className="text-muted-foreground">Date of Birth:</span>
+                  <span className="ml-2 font-medium">
+                    {new Date(horse.dateOfBirth).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+              {horse.age && (
+                <div>
+                  <span className="text-muted-foreground">Age:</span>
+                  <span className="ml-2 font-medium">{horse.age} years</span>
+                </div>
+              )}
+              {horse.height && (
+                <div>
+                  <span className="text-muted-foreground">Height:</span>
+                  <span className="ml-2 font-medium">
+                    {typeof horse.height === "number"
+                      ? `${horse.height} cm`
+                      : horse.height}
+                  </span>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Vaccinations (FEI/BEF Section V — Influenza & Tetanus) */}
+          <section>
+            <h3 className="font-semibold text-lg mb-3">
+              Vaccinations (FEI Section V)
+            </h3>
             {vaccinations.length > 0 ? (
               <div className="space-y-2">
                 {vaccinations.map((vacc, idx) => (
@@ -243,11 +325,16 @@ export function MedicalPassport({
             </section>
           )}
 
-          {/* Footer */}
-          <div className="text-xs text-muted-foreground pt-4 border-t">
+          {/* Footer — Compliance Note */}
+          <div className="text-xs text-muted-foreground pt-4 border-t space-y-1">
             <p>Generated on: {new Date().toLocaleString()}</p>
             <p>
-              Document ID: MP-{horse.id}-{Date.now()}
+              Document ID: EP-{horse.id}-{Date.now()}
+            </p>
+            <p className="text-xs italic">
+              This digital passport is designed to complement, not replace, the
+              official FEI/BEF equine passport. Always carry the original
+              passport when travelling or competing.
             </p>
           </div>
         </CardContent>
