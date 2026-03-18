@@ -94,52 +94,46 @@ function AdminContent() {
 
   // Check admin session status
   const statusQuery = trpc.adminUnlock.getStatus.useQuery();
+  const isUnlocked = !!statusQuery.data?.isUnlocked;
 
-  // Redirect if admin not unlocked
-  useEffect(() => {
-    if (statusQuery.data && !statusQuery.data.isUnlocked) {
-      toast.error("Admin session expired. Please unlock admin mode.");
-      navigate("/ai-chat");
-    }
-  }, [statusQuery.data, navigate]);
-
-  if (!statusQuery.data?.isUnlocked) {
-    return (
-      <div className="container mx-auto p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Admin Access Required</AlertTitle>
-          <AlertDescription>
-            Your admin session has expired or you don't have admin access.
-          </AlertDescription>
-        </Alert>
-        <Button onClick={() => navigate("/dashboard")} className="mt-4">
-          Return to Dashboard
-        </Button>
-      </div>
-    );
-  }
-
-  const { data: stats, isLoading: statsLoading } =
-    trpc.admin.getStats.useQuery();
+  // All admin queries — only fire once admin session is confirmed
+  const { data: stats, isLoading: statsLoading } = trpc.admin.getStats.useQuery(
+    undefined,
+    { enabled: isUnlocked },
+  );
   const {
     data: users,
     isLoading: usersLoading,
     refetch: refetchUsers,
-  } = trpc.admin.getUsers.useQuery();
-  const { data: overdueUsers } = trpc.admin.getOverdueUsers.useQuery();
-  const { data: activityLogs } = trpc.admin.getActivityLogs.useQuery({
-    limit: 50,
+  } = trpc.admin.getUsers.useQuery(undefined, { enabled: isUnlocked });
+  const { data: overdueUsers } = trpc.admin.getOverdueUsers.useQuery(
+    undefined,
+    { enabled: isUnlocked },
+  );
+  const { data: activityLogs } = trpc.admin.getActivityLogs.useQuery(
+    { limit: 50 },
+    { enabled: isUnlocked },
+  );
+  const { data: settings } = trpc.admin.getSettings.useQuery(undefined, {
+    enabled: isUnlocked,
   });
-  const { data: settings } = trpc.admin.getSettings.useQuery();
 
   // API Key queries
-  const apiKeysQuery = trpc.admin.apiKeys.list.useQuery();
-  const envHealthQuery = trpc.admin.getEnvHealth.useQuery(undefined, {
-    refetchInterval: 30000, // Refresh every 30s
+  const apiKeysQuery = trpc.admin.apiKeys.list.useQuery(undefined, {
+    enabled: isUnlocked,
   });
-  const leadsQuery = trpc.admin.getLeads.useQuery();
-  const whatsappConfigQuery = trpc.admin.getWhatsAppConfig.useQuery();
+  const envHealthQuery = trpc.admin.getEnvHealth.useQuery(undefined, {
+    enabled: isUnlocked,
+    refetchInterval: isUnlocked ? 30000 : false,
+  });
+  const leadsQuery = trpc.admin.getLeads.useQuery(undefined, {
+    enabled: isUnlocked,
+  });
+  const whatsappConfigQuery = trpc.admin.getWhatsAppConfig.useQuery(undefined, {
+    enabled: isUnlocked,
+  });
+
+  // All mutations (lazy — no enabled needed)
   const updateWhatsAppMutation = trpc.admin.updateWhatsAppConfig.useMutation({
     onSuccess: () => {
       toast.success("WhatsApp configuration saved");
@@ -147,16 +141,6 @@ function AdminContent() {
     },
     onError: (error) => toast.error(error.message),
   });
-
-  // Sync WhatsApp form when data loads
-  useEffect(() => {
-    if (whatsappConfigQuery.data) {
-      setWhatsappForm((prev) => ({
-        ...prev,
-        enabled: whatsappConfigQuery.data!.enabled,
-      }));
-    }
-  }, [whatsappConfigQuery.data]);
 
   const suspendMutation = trpc.admin.suspendUser.useMutation({
     onSuccess: () => {
@@ -225,6 +209,52 @@ function AdminContent() {
     },
     onError: (error) => toast.error(error.message),
   });
+
+  // Sync WhatsApp form when data loads
+  useEffect(() => {
+    if (whatsappConfigQuery.data) {
+      setWhatsappForm((prev) => ({
+        ...prev,
+        enabled: whatsappConfigQuery.data!.enabled,
+      }));
+    }
+  }, [whatsappConfigQuery.data]);
+
+  // Redirect if admin not unlocked (after data resolves)
+  useEffect(() => {
+    if (statusQuery.data && !statusQuery.data.isUnlocked) {
+      toast.error("Admin session expired. Please unlock admin mode.");
+      navigate("/ai-chat");
+    }
+  }, [statusQuery.data, navigate]);
+
+  // Show loading state while checking admin session
+  if (statusQuery.isLoading) {
+    return (
+      <div className="container mx-auto p-6 flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Show access required if session is not unlocked
+  if (!isUnlocked) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Admin Access Required</AlertTitle>
+          <AlertDescription>
+            Your admin session has expired or you don't have admin access.
+            Go to AI Chat and type <strong>show admin</strong> to unlock.
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => navigate("/ai-chat")} className="mt-4">
+          Go to AI Chat
+        </Button>
+      </div>
+    );
+  }
 
   const filteredUsers = users?.filter(
     (user) =>
