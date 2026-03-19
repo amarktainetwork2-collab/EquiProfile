@@ -97,6 +97,7 @@ function AdminContent() {
   // API key configuration form state
   const [aiConfigForm, setAiConfigForm] = useState({
     openai_api_key: "",
+    huggingface_api_key: "",
   });
   const [smtpForm, setSmtpForm] = useState({
     smtp_host: "",
@@ -255,6 +256,7 @@ function AdminContent() {
       const s = siteSettingsQuery.data as Record<string, string>;
       setAiConfigForm({
         openai_api_key: s.openai_api_key ? "••••••••" : "",
+        huggingface_api_key: s.huggingface_api_key ? "••••••••" : "",
       });
       setSmtpForm({
         smtp_host: s.smtp_host ?? "",
@@ -953,6 +955,43 @@ function AdminContent() {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
+                    Leave blank / unchanged to keep the existing key.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="huggingface-key">Hugging Face API Key</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="huggingface-key"
+                      type="password"
+                      placeholder="Enter new key to update"
+                      value={aiConfigForm.huggingface_api_key}
+                      onChange={(e) =>
+                        setAiConfigForm((p) => ({
+                          ...p,
+                          huggingface_api_key: e.target.value,
+                        }))
+                      }
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        setSiteSettingMutation.mutate({
+                          key: "huggingface_api_key",
+                          value: aiConfigForm.huggingface_api_key,
+                        })
+                      }
+                      disabled={
+                        setSiteSettingMutation.isPending ||
+                        !aiConfigForm.huggingface_api_key ||
+                        aiConfigForm.huggingface_api_key === "••••••••"
+                      }
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Used as fallback AI provider when OpenAI is not configured.
                     Leave blank / unchanged to keep the existing key.
                   </p>
                 </div>
