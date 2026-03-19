@@ -36,6 +36,13 @@
       "when": 1741132800000,
       "tag": "0004_notes_table",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1742385760000,
+      "tag": "0005_fix_site_settings",
+      "breakpoints": true
     }
   ]
 }

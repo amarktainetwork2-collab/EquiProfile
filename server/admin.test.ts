@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { TRPCError } from "@trpc/server";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
@@ -51,6 +52,8 @@ vi.mock("./db", () => ({
   upsertSetting: vi.fn().mockResolvedValue(undefined),
   getRecentBackups: vi.fn().mockResolvedValue([]),
   logActivity: vi.fn().mockResolvedValue(undefined),
+  // getDb returns null by default (no DB in test env) — individual tests may override
+  getDb: vi.fn().mockResolvedValue(null),
 }));
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
@@ -243,5 +246,37 @@ describe("admin router - unauthorized access", () => {
     const caller = appRouter.createCaller(ctx);
 
     await expect(caller.admin.getUsers()).rejects.toThrow();
+  });
+});
+
+describe("admin.setSiteSetting", () => {
+  it("throws INTERNAL_SERVER_ERROR when DB is unavailable", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+
+    const err = await caller.admin
+      .setSiteSetting({ key: "openai_api_key", value: "sk-test" })
+      .catch((e) => e);
+    expect(err).toBeInstanceOf(TRPCError);
+    expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
+    expect((err as TRPCError).message).toContain("Database not available");
+  });
+
+  it("rejects keys with invalid characters", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.admin.setSiteSetting({ key: "OPENAI-KEY", value: "sk-test" }),
+    ).rejects.toThrow();
+  });
+
+  it("rejects values longer than 2000 characters", async () => {
+    const ctx = createAdminContext();
+    const caller = appRouter.createCaller(ctx);
+
+    await expect(
+      caller.admin.setSiteSetting({ key: "openai_api_key", value: "x".repeat(2001) }),
+    ).rejects.toThrow();
   });
 });

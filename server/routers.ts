@@ -2569,23 +2569,22 @@ Format your response as JSON with keys: recommendation, explanation, precautions
         }),
       )
       .mutation(async ({ input }) => {
-        const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        await db
-          .insert(siteSettings)
-          .values({ key: "whatsapp_enabled", value: String(input.enabled) })
-          .onDuplicateKeyUpdate({ set: { value: String(input.enabled) } });
+        const dbConn = await getDb();
+        if (!dbConn) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const upsert = async (key: string, value: string) => {
+          await dbConn.execute(
+            sql`INSERT INTO \`siteSettings\` (\`key\`, \`value\`)
+                VALUES (${key}, ${value})
+                ON DUPLICATE KEY UPDATE \`value\` = ${value}`,
+          );
+          invalidateConfigCache(key);
+        };
+        await upsert("whatsapp_enabled", String(input.enabled));
         if (input.phoneNumberId) {
-          await db
-            .insert(siteSettings)
-            .values({ key: "whatsapp_phone_id", value: input.phoneNumberId })
-            .onDuplicateKeyUpdate({ set: { value: input.phoneNumberId } });
+          await upsert("whatsapp_phone_id", input.phoneNumberId);
         }
         if (input.accessToken) {
-          await db
-            .insert(siteSettings)
-            .values({ key: "whatsapp_token", value: input.accessToken })
-            .onDuplicateKeyUpdate({ set: { value: input.accessToken } });
+          await upsert("whatsapp_token", input.accessToken);
         }
         return { success: true };
       }),
@@ -2729,12 +2728,25 @@ Format your response as JSON with keys: recommendation, explanation, precautions
             code: "INTERNAL_SERVER_ERROR",
             message: "Database not available",
           });
-        await dbConn
-          .insert(siteSettings)
-          .values({ key: input.key, value: input.value })
-          .onDuplicateKeyUpdate({ set: { value: input.value } });
-        invalidateConfigCache(input.key);
-        return { success: true };
+        try {
+          // Use explicit column list (no id/updatedAt) to avoid DEFAULT keyword
+          // issues across MySQL versions.  The UNIQUE key on `key` triggers
+          // ON DUPLICATE KEY UPDATE when the same key is saved a second time.
+          await dbConn.execute(
+            sql`INSERT INTO \`siteSettings\` (\`key\`, \`value\`)
+                VALUES (${input.key}, ${input.value})
+                ON DUPLICATE KEY UPDATE \`value\` = ${input.value}`,
+          );
+          invalidateConfigCache(input.key);
+          return { success: true };
+        } catch (err) {
+          console.error("[admin.setSiteSetting] DB error:", err);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message:
+              "Failed to save setting. Check that the siteSettings table exists and is up to date (run migrations).",
+          });
+        }
       }),
 
     getLeads: adminUnlockedProcedure.query(async () => {
