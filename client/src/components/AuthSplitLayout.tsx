@@ -75,4 +75,3 @@ export function AuthSplitLayout({ children }: AuthSplitLayoutProps) {
     </div>
   );
 }
-

@@ -149,9 +149,7 @@ export function ImageSlider({
               onClick={() => goTo(i)}
               aria-label={`Go to slide ${i + 1}`}
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                i === current
-                  ? "bg-white w-5"
-                  : "bg-white/40 hover:bg-white/60"
+                i === current ? "bg-white w-5" : "bg-white/40 hover:bg-white/60"
               }`}
             />
           ))}

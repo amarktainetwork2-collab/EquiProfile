@@ -129,12 +129,14 @@ export const heroSlides = [
   {
     image: marketingAssets.hero.heroHorse,
     title: "Professional Horse Management",
-    subtitle: "Everything you need to keep your horses healthy and performing their best.",
+    subtitle:
+      "Everything you need to keep your horses healthy and performing their best.",
   },
   {
     image: marketingAssets.hero.heroStable,
     title: "Your Stable, Organised",
-    subtitle: "Health records, training logs, nutrition plans — all in one place.",
+    subtitle:
+      "Health records, training logs, nutrition plans — all in one place.",
   },
   {
     image: marketingAssets.landing.training,
@@ -144,12 +146,14 @@ export const heroSlides = [
   {
     image: marketingAssets.landing.ridingLesson,
     title: "Smarter Decisions, Happier Horses",
-    subtitle: "AI-powered weather analysis and real-time riding recommendations.",
+    subtitle:
+      "AI-powered weather analysis and real-time riding recommendations.",
   },
   {
     image: marketingAssets.landing.stable,
     title: "Built for Professionals",
-    subtitle: "From single-horse owners to multi-horse stables — scale as you grow.",
+    subtitle:
+      "From single-horse owners to multi-horse stables — scale as you grow.",
   },
 ];
 

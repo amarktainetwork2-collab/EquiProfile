@@ -555,7 +555,8 @@ export default function Settings() {
                     Install EquiProfile App
                   </CardTitle>
                   <CardDescription>
-                    Add EquiProfile to your phone home screen for instant access — works like a native app
+                    Add EquiProfile to your phone home screen for instant access
+                    — works like a native app
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -563,8 +564,12 @@ export default function Settings() {
                     <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                       <Download className="w-5 h-5 text-green-600 dark:text-green-400" />
                       <div>
-                        <p className="font-medium text-green-800 dark:text-green-300">App installed</p>
-                        <p className="text-sm text-green-700 dark:text-green-400">EquiProfile is installed on this device.</p>
+                        <p className="font-medium text-green-800 dark:text-green-300">
+                          App installed
+                        </p>
+                        <p className="text-sm text-green-700 dark:text-green-400">
+                          EquiProfile is installed on this device.
+                        </p>
                       </div>
                     </div>
                   ) : pwa.canInstall ? (
@@ -572,8 +577,12 @@ export default function Settings() {
                       <div className="flex items-center gap-3 p-4 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800">
                         <Download className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                         <div className="flex-1">
-                          <p className="font-medium text-indigo-800 dark:text-indigo-300">Ready to install</p>
-                          <p className="text-sm text-indigo-700 dark:text-indigo-400">One tap to add EquiProfile to your home screen.</p>
+                          <p className="font-medium text-indigo-800 dark:text-indigo-300">
+                            Ready to install
+                          </p>
+                          <p className="text-sm text-indigo-700 dark:text-indigo-400">
+                            One tap to add EquiProfile to your home screen.
+                          </p>
                         </div>
                         <Button
                           onClick={pwa.install}
@@ -592,30 +601,57 @@ export default function Settings() {
                           <span className="text-lg">🤖</span> Android (Chrome)
                         </h3>
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground ml-1">
-                          <li>Open EquiProfile in <strong>Chrome</strong></li>
-                          <li>Tap the <strong>⋮ menu</strong> (three dots, top-right)</li>
-                          <li>Select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
-                          <li>Tap <strong>Install</strong> to confirm</li>
+                          <li>
+                            Open EquiProfile in <strong>Chrome</strong>
+                          </li>
+                          <li>
+                            Tap the <strong>⋮ menu</strong> (three dots,
+                            top-right)
+                          </li>
+                          <li>
+                            Select <strong>"Add to Home screen"</strong> or{" "}
+                            <strong>"Install app"</strong>
+                          </li>
+                          <li>
+                            Tap <strong>Install</strong> to confirm
+                          </li>
                         </ol>
                       </div>
 
                       {/* iOS instructions */}
                       <div className="space-y-3">
                         <h3 className="font-semibold flex items-center gap-2">
-                          <span className="text-lg">🍎</span> iPhone / iPad (Safari)
+                          <span className="text-lg">🍎</span> iPhone / iPad
+                          (Safari)
                         </h3>
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground ml-1">
-                          <li>Open EquiProfile in <strong>Safari</strong></li>
-                          <li>Tap the <strong><Share className="w-3.5 h-3.5 inline-block mb-0.5" /> Share</strong> button (bottom toolbar)</li>
-                          <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
-                          <li>Tap <strong>Add</strong> to confirm</li>
+                          <li>
+                            Open EquiProfile in <strong>Safari</strong>
+                          </li>
+                          <li>
+                            Tap the{" "}
+                            <strong>
+                              <Share className="w-3.5 h-3.5 inline-block mb-0.5" />{" "}
+                              Share
+                            </strong>{" "}
+                            button (bottom toolbar)
+                          </li>
+                          <li>
+                            Scroll down and tap{" "}
+                            <strong>"Add to Home Screen"</strong>
+                          </li>
+                          <li>
+                            Tap <strong>Add</strong> to confirm
+                          </li>
                         </ol>
                       </div>
 
                       {isIOS && isSafari && (
                         <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-sm">
                           <p className="text-amber-800 dark:text-amber-300">
-                            <strong>Tip:</strong> You're on Safari — tap the Share button at the bottom of the screen, then "Add to Home Screen".
+                            <strong>Tip:</strong> You're on Safari — tap the
+                            Share button at the bottom of the screen, then "Add
+                            to Home Screen".
                           </p>
                         </div>
                       )}
@@ -625,10 +661,18 @@ export default function Settings() {
                   <div className="pt-2 border-t">
                     <h3 className="font-semibold text-sm mb-2">What you get</h3>
                     <ul className="space-y-1.5 text-sm text-muted-foreground">
-                      <li className="flex items-center gap-2">✓ Launch from home screen like a native app</li>
-                      <li className="flex items-center gap-2">✓ Full-screen experience (no browser bar)</li>
-                      <li className="flex items-center gap-2">✓ Push notifications for reminders</li>
-                      <li className="flex items-center gap-2">✓ Works offline for recent data</li>
+                      <li className="flex items-center gap-2">
+                        ✓ Launch from home screen like a native app
+                      </li>
+                      <li className="flex items-center gap-2">
+                        ✓ Full-screen experience (no browser bar)
+                      </li>
+                      <li className="flex items-center gap-2">
+                        ✓ Push notifications for reminders
+                      </li>
+                      <li className="flex items-center gap-2">
+                        ✓ Works offline for recent data
+                      </li>
                     </ul>
                   </div>
                 </CardContent>

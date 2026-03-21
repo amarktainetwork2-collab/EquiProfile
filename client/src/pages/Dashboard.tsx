@@ -1024,54 +1024,54 @@ function DashboardContent() {
 
         {/* Active Tasks */}
         <Card className="border-white/5 bg-card/80 backdrop-blur-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="font-serif text-base flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-500" />
-                Active Tasks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {tasks.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  <p className="text-xs">No pending tasks</p>
-                  <Link href="/tasks">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2 text-xs h-7"
-                    >
-                      Add task
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {tasks.slice(0, 6).map((task: any) => (
+          <CardHeader className="pb-3">
+            <CardTitle className="font-serif text-base flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-500" />
+              Active Tasks
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {tasks.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                <p className="text-xs">No pending tasks</p>
+                <Link href="/tasks">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 text-xs h-7"
+                  >
+                    Add task
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {tasks.slice(0, 6).map((task: any) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-2 p-2 rounded-lg border border-muted/40 bg-muted/20"
+                  >
                     <div
-                      key={task.id}
-                      className="flex items-center gap-2 p-2 rounded-lg border border-muted/40 bg-muted/20"
-                    >
-                      <div
-                        className={`w-2 h-2 rounded-full shrink-0 ${task.priority === "high" ? "bg-red-500" : task.priority === "medium" ? "bg-amber-500" : "bg-green-500"}`}
-                      />
-                      <p className="text-xs font-medium truncate flex-1">
-                        {task.title}
-                      </p>
-                    </div>
-                  ))}
-                  <Link href="/tasks">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-xs text-muted-foreground hover:text-foreground mt-1"
-                    >
-                      View all tasks <ChevronRight className="w-3 h-3 ml-1" />
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      className={`w-2 h-2 rounded-full shrink-0 ${task.priority === "high" ? "bg-red-500" : task.priority === "medium" ? "bg-amber-500" : "bg-green-500"}`}
+                    />
+                    <p className="text-xs font-medium truncate flex-1">
+                      {task.title}
+                    </p>
+                  </div>
+                ))}
+                <Link href="/tasks">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs text-muted-foreground hover:text-foreground mt-1"
+                  >
+                    View all tasks <ChevronRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* ── Module Grid with Section Headers ──────────────── */}
