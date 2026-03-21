@@ -63,18 +63,15 @@ const stableNavLinks = [
   { label: "Owners", path: "/contacts" },
 ];
 
+// Props are kept for backward compatibility but no longer affect rendering.
+// The navbar always uses a permanent background.
 interface NavbarProps {
-  /**
-   * @deprecated No longer used — navbar always shows its background.
-   */
   alwaysDark?: boolean;
-  /**
-   * @deprecated No longer used — navbar always shows its background.
-   */
   alwaysLight?: boolean;
 }
 
-export function Navbar({}: NavbarProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function Navbar(_props: NavbarProps = {}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [location] = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
