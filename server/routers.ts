@@ -660,6 +660,113 @@ export const appRouter = router({
         latestWeather,
       };
     }),
+
+    // ── Onboarding ──────────────────────────────────────────────────────
+    getOnboardingStatus: protectedProcedure.query(async ({ ctx }) => {
+      const user = await db.getUserById(ctx.user.id);
+      if (!user) return { completed: true, step: 1 };
+      const prefs = user.preferences ? JSON.parse(user.preferences) : {};
+      return {
+        completed: prefs.onboardingCompleted === true,
+        step: typeof prefs.onboardingStep === "number" ? prefs.onboardingStep : 1,
+        selectedExperience: prefs.selectedExperience ?? null,
+        activationChecklist: prefs.activationChecklist ?? {
+          addedHorse: false,
+          choseExperience: false,
+          viewedDashboard: false,
+          addedHealthRecord: false,
+          exploredTraining: false,
+        },
+      };
+    }),
+
+    updateOnboardingStep: protectedProcedure
+      .input(z.object({ step: z.number().min(1).max(5) }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await db.getUserById(ctx.user.id);
+        const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
+        prefs.onboardingStep = input.step;
+        await db.updateUser(ctx.user.id, { preferences: JSON.stringify(prefs) });
+        return { success: true };
+      }),
+
+    completeOnboarding: protectedProcedure.mutation(async ({ ctx }) => {
+      const user = await db.getUserById(ctx.user.id);
+      const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
+      prefs.onboardingCompleted = true;
+      prefs.onboardingStep = 5;
+      await db.updateUser(ctx.user.id, { preferences: JSON.stringify(prefs) });
+      return { success: true };
+    }),
+
+    setExperience: protectedProcedure
+      .input(z.object({ experience: z.enum(["standard", "stable"]) }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await db.getUserById(ctx.user.id);
+        const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
+        prefs.selectedExperience = input.experience;
+        prefs.planTier = input.experience === "stable" ? "stable" : "pro";
+        if (!prefs.activationChecklist) {
+          prefs.activationChecklist = {};
+        }
+        prefs.activationChecklist.choseExperience = true;
+        await db.updateUser(ctx.user.id, { preferences: JSON.stringify(prefs) });
+        return { success: true };
+      }),
+
+    updateActivationChecklist: protectedProcedure
+      .input(
+        z.object({
+          item: z.enum([
+            "addedHorse",
+            "choseExperience",
+            "viewedDashboard",
+            "addedHealthRecord",
+            "exploredTraining",
+          ]),
+          value: z.boolean(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const user = await db.getUserById(ctx.user.id);
+        const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
+        if (!prefs.activationChecklist) {
+          prefs.activationChecklist = {};
+        }
+        prefs.activationChecklist[input.item] = input.value;
+        await db.updateUser(ctx.user.id, { preferences: JSON.stringify(prefs) });
+        return { success: true };
+      }),
+
+    dismissTour: protectedProcedure
+      .input(z.object({ tourId: z.string().min(1).max(100) }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await db.getUserById(ctx.user.id);
+        const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
+        if (!prefs.dismissedTours) {
+          prefs.dismissedTours = [];
+        }
+        if (!prefs.dismissedTours.includes(input.tourId)) {
+          prefs.dismissedTours.push(input.tourId);
+        }
+        await db.updateUser(ctx.user.id, { preferences: JSON.stringify(prefs) });
+        return { success: true };
+      }),
+
+    dismissTip: protectedProcedure
+      .input(z.object({ tipId: z.string().min(1).max(100) }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await db.getUserById(ctx.user.id);
+        const prefs = user?.preferences ? JSON.parse(user.preferences) : {};
+        if (!prefs.dismissedTips) {
+          prefs.dismissedTips = [];
+        }
+        if (!prefs.dismissedTips.includes(input.tipId)) {
+          prefs.dismissedTips.push(input.tipId);
+        }
+        await db.updateUser(ctx.user.id, { preferences: JSON.stringify(prefs) });
+        return { success: true };
+      }),
   }),
 
   // Horse management

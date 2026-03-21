@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   Card,
@@ -10,6 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatsOverview } from "@/components/StatsOverview";
+import { ActivationChecklist } from "@/components/ActivationChecklist";
+import { GuidedTour, type TourStep } from "@/components/GuidedTour";
+import { ContextualTip } from "@/components/ContextualTip";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
@@ -296,6 +300,11 @@ function DashboardContent() {
     retry: false,
   });
   const { data: subscription } = trpc.user.getSubscriptionStatus.useQuery();
+  const { data: onboarding } = trpc.user.getOnboardingStatus.useQuery(
+    undefined,
+    { staleTime: 60_000 },
+  );
+  const updateChecklist = trpc.user.updateActivationChecklist.useMutation();
   const { data: trainingStats } = trpc.analytics.getTrainingStats.useQuery(
     {},
     { retry: false },
@@ -340,6 +349,18 @@ function DashboardContent() {
     },
     { retry: false, staleTime: 5 * 60 * 1000 },
   );
+
+  // Mark "viewedDashboard" activation checklist item on first visit
+  useEffect(() => {
+    if (
+      onboarding?.completed &&
+      onboarding.activationChecklist &&
+      !onboarding.activationChecklist.viewedDashboard
+    ) {
+      updateChecklist.mutate({ item: "viewedDashboard", value: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onboarding?.completed, onboarding?.activationChecklist?.viewedDashboard]);
 
   const getSubscriptionBadge = () => {
     if (!subscription) return null;
@@ -507,6 +528,31 @@ function DashboardContent() {
           </div>
         </div>
       </motion.div>
+
+      {/* ── Activation Checklist (trial users only) ───────────── */}
+      {subscription?.status === "trial" &&
+        onboarding?.completed &&
+        onboarding.activationChecklist && (
+          <ActivationChecklist items={onboarding.activationChecklist} />
+        )}
+
+      {/* ── Dashboard contextual tip ─────────────────────────── */}
+      {onboarding?.completed && (
+        <ContextualTip
+          tipId="dashboard-welcome"
+          title="Welcome to your dashboard"
+          message="This is your command centre. Explore the modules below to manage your horses, health records, training and more."
+          dismissedTips={
+            (() => {
+              try {
+                return JSON.parse(user?.preferences || "{}").dismissedTips || [];
+              } catch {
+                return [];
+              }
+            })()
+          }
+        />
+      )}
 
       {/* ── Quick-Access Stat Cards ───────────────────────────── */}
       <motion.div
