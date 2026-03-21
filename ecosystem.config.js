@@ -4,8 +4,7 @@ module.exports = {
       name: "equiprofile",
       script: "dist/index.js",
       // For low-memory VPS (< 4GB RAM): use instances: 1
-      // For higher-memory VPS (>= 4GB RAM): use instances: 2
-      instances: 1, // Changed to 1 for low-memory deployment
+      // For higher-memory VPS (>= 4GB RAM): set PM2_INSTANCES=2
       instances: process.env.PM2_INSTANCES || 1,
       exec_mode: "cluster",
       autorestart: true,
