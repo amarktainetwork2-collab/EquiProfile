@@ -516,14 +516,17 @@ function DashboardContent() {
     },
   ];
 
+  const userPrefs = (() => {
+    try {
+      return JSON.parse(user?.preferences || "{}");
+    } catch {
+      return {};
+    }
+  })();
+
   const showDashboardTour = (() => {
     if (!onboarding?.completed) return false;
-    try {
-      const prefs = JSON.parse(user?.preferences || "{}");
-      return !(prefs.dismissedTours || []).includes("dashboard");
-    } catch {
-      return false;
-    }
+    return !(userPrefs.dismissedTours || []).includes("dashboard");
   })();
 
   return (
@@ -580,15 +583,7 @@ function DashboardContent() {
           tipId="dashboard-welcome"
           title="Welcome to your dashboard"
           message="This is your command centre. Explore the modules below to manage your horses, health records, training and more."
-          dismissedTips={
-            (() => {
-              try {
-                return JSON.parse(user?.preferences || "{}").dismissedTips || [];
-              } catch {
-                return [];
-              }
-            })()
-          }
+          dismissedTips={userPrefs.dismissedTips || []}
         />
       )}
 

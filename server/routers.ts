@@ -664,7 +664,9 @@ export const appRouter = router({
     // ── Onboarding ──────────────────────────────────────────────────────
     getOnboardingStatus: protectedProcedure.query(async ({ ctx }) => {
       const user = await db.getUserById(ctx.user.id);
-      if (!user) return { completed: true, step: 1 };
+      if (!user) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      }
       const prefs = user.preferences ? JSON.parse(user.preferences) : {};
       return {
         completed: prefs.onboardingCompleted === true,

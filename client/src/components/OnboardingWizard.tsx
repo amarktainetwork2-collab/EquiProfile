@@ -61,7 +61,7 @@ export function OnboardingWizard({
       await createHorse.mutateAsync({
         name: horseName.trim(),
         breed: horseBreed.trim() || undefined,
-        age: horseAge ? parseInt(horseAge, 10) : undefined,
+        age: horseAge ? (Number.isNaN(parseInt(horseAge, 10)) ? undefined : parseInt(horseAge, 10)) : undefined,
       });
       goToStep(3);
     } catch (err: unknown) {
