@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { cn } from "@/lib/utils";
 import {
   CloudSun,
   Thermometer,
@@ -247,7 +248,7 @@ function WeatherContent() {
                 onClick={handleRefresh}
                 disabled={currentFetching}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${currentFetching ? "animate-spin" : ""}`} />
+                <RefreshCw className={cn("w-4 h-4 mr-2", currentFetching && "animate-spin")} />
                 {currentFetching ? "Refreshing..." : "Refresh"}
               </Button>
             </div>

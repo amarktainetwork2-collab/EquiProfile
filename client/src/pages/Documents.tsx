@@ -500,12 +500,12 @@ function DocumentsContent() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       {horse && <span>{horse.name}</span>}
                       {doc.fileSize && (
-                        <span>{horse ? "· " : ""}{formatFileSize(doc.fileSize)}</span>
+                        <span>{horse ? "· " : ""} {formatFileSize(doc.fileSize)}</span>
                       )}
-                      {doc.uploadedAt && (
+                      {doc.createdAt && (
                         <span>
                           ·{" "}
-                          {new Date(doc.uploadedAt).toLocaleDateString("en-GB", {
+                          {new Date(doc.createdAt).toLocaleDateString("en-GB", {
                             day: "numeric",
                             month: "short",
                             year: "numeric",

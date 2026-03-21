@@ -108,7 +108,8 @@ export function getRidingAdvice(weather: WeatherData): RidingAdvice {
   const { temperature, windSpeed, precipitation } = weather;
   const warnings: string[] = [];
 
-  // Build warnings first so they are always included in returned advice
+  // Build warnings first — these are referenced in all non-excellent condition blocks below.
+  // The "excellent" early-return explicitly uses [] since no warnings apply in perfect conditions.
   if (windSpeed > 40) {
     warnings.push("Strong winds may spook horses and make riding hazardous");
   }
