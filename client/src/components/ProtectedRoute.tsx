@@ -1,11 +1,9 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Loader2 } from "lucide-react";
-import { ReactNode, useCallback, useEffect, useState } from "react";
+import { ReactNode, useEffect } from "react";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
-import { trpc } from "@/lib/trpc";
-import { OnboardingWizard } from "./OnboardingWizard";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -18,7 +16,6 @@ interface ProtectedRouteProps {
  *
  * Ensures user is authenticated before rendering children.
  * Redirects to login if not authenticated.
- * Shows the onboarding wizard on first login (unless already completed/skipped).
  * Optionally can require admin role or stable plan.
  */
 export function ProtectedRoute({
@@ -28,14 +25,6 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { user, loading, isAuthenticated, error } = useAuth();
   const [, setLocation] = useLocation();
-  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
-
-  const onboardingQuery = trpc.user.getOnboardingStatus.useQuery(undefined, {
-    enabled: isAuthenticated,
-    staleTime: 60_000,
-  });
-
-  const skipOnboarding = trpc.user.skipOnboarding.useMutation();
 
   const isStablePlan = (() => {
     if (!user?.preferences) return false;
@@ -46,19 +35,6 @@ export function ProtectedRoute({
       return false;
     }
   })();
-
-  const handleOnboardingComplete = useCallback(() => {
-    setOnboardingDismissed(true);
-    onboardingQuery.refetch();
-  }, [onboardingQuery]);
-
-  const handleOnboardingSkip = useCallback(async () => {
-    // Fire-and-forget — dismiss immediately, save in background
-    setOnboardingDismissed(true);
-    skipOnboarding.mutate(undefined, {
-      onSettled: () => onboardingQuery.refetch(),
-    });
-  }, [skipOnboarding, onboardingQuery]);
 
   useEffect(() => {
     if (loading) return;
@@ -138,26 +114,7 @@ export function ProtectedRoute({
     return null;
   }
 
-  // Show onboarding wizard if not completed and not skipped
-  const onboardingData = onboardingQuery.data;
-  const showOnboarding =
-    !onboardingDismissed &&
-    onboardingData != null &&
-    !onboardingData.completed &&
-    !onboardingData.skipped;
-
-  return (
-    <>
-      {showOnboarding && (
-        <OnboardingWizard
-          userName={user?.name || ""}
-          onComplete={handleOnboardingComplete}
-          onSkip={handleOnboardingSkip}
-        />
-      )}
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }
 
 /**

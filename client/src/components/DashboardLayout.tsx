@@ -64,10 +64,10 @@ import {
   Brain,
   Home,
   Building2,
-  Briefcase,
   UserCog,
   Navigation,
   ShoppingCart,
+  Wrench,
 } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -77,6 +77,7 @@ import { trpc } from "@/lib/trpc";
 import { ThemeToggle } from "./ThemeToggle";
 import { NotificationCenter } from "./NotificationCenter";
 
+// Standard plan primary nav
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: CircleDot, label: "My Horses", path: "/horses" },
@@ -95,14 +96,25 @@ const menuItems = [
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
-// Extra menu items for Stable plan subscribers
-const stableMenuItems = [
+// Stable plan primary nav — shown instead of (not in addition to) standard nav for stable users
+const stableNavItems = [
   { icon: Building2, label: "Stable Dashboard", path: "/stable-dashboard" },
-  { icon: Home, label: "Stable", path: "/stable" },
+  { icon: CircleDot, label: "Horses", path: "/horses" },
   { icon: UserCog, label: "Staff", path: "/staff" },
-  { icon: Briefcase, label: "Owners", path: "/contacts" },
+  { icon: Users, label: "Owners & Clients", path: "/contacts" },
+  { icon: Calendar, label: "Yard Calendar", path: "/calendar" },
+  { icon: Activity, label: "Training", path: "/training" },
+  { icon: Heart, label: "Health Records", path: "/health" },
+  { icon: ListChecks, label: "Tasks", path: "/tasks" },
   { icon: MessageSquare, label: "Messages", path: "/messages" },
-  { icon: Settings, label: "Stable Setup", path: "/stable-setup" },
+  { icon: FileText, label: "Documents", path: "/documents" },
+  { icon: Brain, label: "AI Chat", path: "/ai-chat" },
+  { icon: Cloud, label: "Weather", path: "/weather" },
+  { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: Home, label: "Stable Profile", path: "/stable" },
+  { icon: Wrench, label: "Stable Setup", path: "/stable-setup" },
+  { icon: DollarSign, label: "Billing", path: "/billing" },
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const adminMenuItems = [
@@ -110,12 +122,19 @@ const adminMenuItems = [
   { icon: Shield, label: "QA Checklist", path: "/qa-check" },
 ];
 
-// Bottom nav tabs (5 max for mobile)
-const bottomNavItems = [
+// Bottom nav tabs — plan-aware
+const standardBottomNavItems = [
   { icon: Home, label: "Home", path: "/dashboard" },
   { icon: CircleDot, label: "Horses", path: "/horses" },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
   { icon: Brain, label: "AI Chat", path: "/ai-chat" },
+];
+
+const stableBottomNavItems = [
+  { icon: Building2, label: "Stable", path: "/stable-dashboard" },
+  { icon: CircleDot, label: "Horses", path: "/horses" },
+  { icon: Calendar, label: "Calendar", path: "/calendar" },
+  { icon: UserCog, label: "Staff", path: "/staff" },
 ];
 
 // All modules grouped for the "More" sheet
@@ -273,7 +292,6 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find((item) => item.path === location);
   const isMobile = useIsMobile();
   const { isAdminVisible } = useAdminToggle();
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
@@ -296,6 +314,11 @@ function DashboardLayoutContent({
     enabled: !!adminStatus?.isUnlocked,
     staleTime: Infinity,
   });
+
+  // Plan-aware nav and bottom nav
+  const activeNavItems = isStablePlan ? stableNavItems : menuItems;
+  const bottomNavItems = isStablePlan ? stableBottomNavItems : standardBottomNavItems;
+  const activeMenuItem = activeNavItems.find((item) => item.path === location);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -362,7 +385,7 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.map((item) => {
+              {activeNavItems.map((item) => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -390,37 +413,6 @@ function DashboardLayoutContent({
                     const isActive = location === item.path;
                     return (
                       <SidebarMenuItem key={item.path}>
-                        <SidebarMenuButton
-                          isActive={isActive}
-                          onClick={() => setLocation(item.path)}
-                          tooltip={item.label}
-                          className={`h-10 transition-all font-medium ${isActive ? "bg-primary/10 text-primary font-semibold" : ""}`}
-                        >
-                          <item.icon
-                            className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
-                          />
-                          <span>{item.label}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </>
-              )}
-              {/* Stable plan menu items */}
-              {isStablePlan && (
-                <>
-                  <div className="my-2 px-2">
-                    <div className="h-px bg-border" />
-                    {!isCollapsed && (
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-2 px-2 font-semibold">
-                        Stable
-                      </p>
-                    )}
-                  </div>
-                  {stableMenuItems.map((item) => {
-                    const isActive = location === item.path;
-                    return (
-                      <SidebarMenuItem key={`stable-${item.label}`}>
                         <SidebarMenuButton
                           isActive={isActive}
                           onClick={() => setLocation(item.path)}
@@ -531,7 +523,8 @@ function DashboardLayoutContent({
               {bottomNavItems.map((item) => {
                 const isActive =
                   location === item.path ||
-                  (item.path === "/dashboard" && location === "/");
+                  (item.path === "/dashboard" && location === "/") ||
+                  (item.path === "/stable-dashboard" && location === "/");
                 const Icon = item.icon;
                 return (
                   <button
