@@ -38,12 +38,16 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated — go to the correct dashboard
   if (isAuthenticated) {
-    setLocation("/dashboard");
+    let planTier: string | null = null;
+    try {
+      if (user?.preferences) planTier = JSON.parse(user.preferences)?.planTier ?? null;
+    } catch { /* ignore */ }
+    setLocation(planTier === "stable" ? "/stable-dashboard" : "/dashboard");
     return null;
   }
 
@@ -86,8 +90,8 @@ export default function Login() {
         return;
       }
 
-      // Redirect to dashboard on success
-      window.location.href = "/dashboard";
+      // Redirect to the correct dashboard based on plan tier
+      window.location.href = data.planTier === "stable" ? "/stable-dashboard" : "/dashboard";
     } catch (err) {
       setError("An error occurred. Please try again.");
       setIsLoading(false);

@@ -193,7 +193,7 @@ export default function Register() {
       }
 
       // If the user came from the Pricing page with a plan intent, redirect to
-      // Stripe checkout.  Otherwise go to dashboard.
+      // Stripe checkout.  Otherwise go to experience selection.
       if (hasSubscribeIntent) {
         try {
           const checkout = await createCheckout.mutateAsync({
@@ -205,12 +205,12 @@ export default function Register() {
             return;
           }
         } catch {
-          // checkout failed – fall through to dashboard
+          // checkout failed – fall through to experience selection
         }
       }
 
-      // Default: go to dashboard
-      window.location.href = "/dashboard";
+      // New users must choose their experience (Standard vs Stable) before landing on a dashboard
+      window.location.href = "/onboarding";
     } catch (err) {
       setError("An error occurred. Please try again.");
       setIsLoading(false);

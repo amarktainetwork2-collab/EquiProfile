@@ -9,6 +9,16 @@ import * as email from "./email";
 import { ENV } from "./env";
 import { COOKIE_NAME } from "@shared/const";
 
+/** Extract planTier from a JSON preferences string. Returns null if not set. */
+function extractPlanTier(preferences: string | null | undefined): string | null {
+  if (!preferences) return null;
+  try {
+    return JSON.parse(preferences)?.planTier ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const router: Router = express.Router();
 
 // Rate limiter for login attempts (10 attempts per 15 minutes)
@@ -129,8 +139,13 @@ router.post("/signup", async (req, res) => {
         console.error("[Auth] Failed to send welcome email:", err),
       );
 
+    // Re-fetch user to get latest preferences (including planTier from planType)
+    const freshUser = await db.getUserById(user.id);
+    const planTier = extractPlanTier(freshUser?.preferences ?? null);
+
     res.json({
       success: true,
+      planTier,
       user: {
         id: user.id,
         name: user.name,
@@ -203,8 +218,11 @@ router.post("/login", loginLimiter, async (req, res) => {
       domain: ENV.cookieDomain,
     });
 
+    const planTier = extractPlanTier(user.preferences);
+
     res.json({
       success: true,
+      planTier,
       user: {
         id: user.id,
         name: user.name,

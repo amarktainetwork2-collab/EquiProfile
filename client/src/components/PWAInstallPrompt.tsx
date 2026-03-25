@@ -1,4 +1,4 @@
-import { Download, X, Smartphone, Star } from "lucide-react";
+import { Download, X, Star } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { Button } from "@/components/ui/button";
 
@@ -18,9 +18,9 @@ export function PWAInstallPrompt() {
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-emerald-500/10" />
 
         <div className="flex items-start gap-3 relative">
-          {/* App icon placeholder */}
-          <div className="shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
-            <Smartphone className="w-6 h-6 text-white" />
+          {/* App icon */}
+          <div className="shrink-0 w-12 h-12 rounded-xl overflow-hidden shadow-lg">
+            <img src="/icons/icon-96x96.png" alt="EquiProfile" className="w-full h-full object-cover" />
           </div>
 
           <div className="flex-1 min-w-0">
