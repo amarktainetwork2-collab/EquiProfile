@@ -78,7 +78,7 @@ const FeedCostTracking = lazy(() => import("./pages/FeedCostTracking"));
 const RideTracking = lazy(() => import("./pages/RideTracking"));
 const EquinePassport = lazy(() => import("./pages/EquinePassport"));
 const StableStaff = lazy(() => import("./pages/StableStaff"));
-const StableSetup = lazy(() => import("./pages/StableSetup"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 
 // Minimal spinner shown while lazy chunks load (doesn't block FCP)
 function PageSpinner() {
@@ -120,6 +120,13 @@ function Router() {
             <Route path="/register" component={Register} />
             <Route path="/forgot-password" component={ForgotPassword} />
             <Route path="/reset-password" component={ResetPassword} />
+
+            {/* Onboarding — experience selection for new users */}
+            <Route path="/onboarding">
+              <ProtectedRoute>
+                <Onboarding />
+              </ProtectedRoute>
+            </Route>
 
             {/* App Pages (Protected - require auth) */}
             <Route path="/dashboard">
