@@ -2312,7 +2312,7 @@ Format your response as JSON with keys: recommendation, explanation, precautions
         user.latitude,
         user.longitude,
       );
-      const advice = weather.getRidingAdvice(current);
+      const advice = weather.getRidingAdvice(current, new Date().getHours());
 
       return {
         weather: current,

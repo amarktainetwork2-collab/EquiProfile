@@ -101,15 +101,37 @@ export async function getWeatherForecast(
 }
 
 /**
- * Get riding advice based on weather conditions
- * Plain language, no JSON formatting
+ * Get riding advice based on weather conditions and time of day.
+ * Considers precipitation, temperature, wind, and hour of day.
  */
-export function getRidingAdvice(weather: WeatherData): RidingAdvice {
+export function getRidingAdvice(weather: WeatherData, hourOfDay?: number): RidingAdvice {
   const { temperature, windSpeed, precipitation } = weather;
+
+  // Determine current hour from weather timestamp or injected hour
+  const hour =
+    hourOfDay ??
+    (() => {
+      try {
+        return new Date(weather.timestamp).getHours();
+      } catch {
+        return new Date().getHours();
+      }
+    })();
+
+  const isNighttime = hour < 6 || hour >= 21;
+  const isDusk = hour >= 19 && hour < 21;
+  const isDawn = hour >= 5 && hour < 7;
+
   const warnings: string[] = [];
 
-  // Build warnings first — these are referenced in all non-excellent condition blocks below.
-  // The "excellent" early-return explicitly uses [] since no warnings apply in perfect conditions.
+  // Time-of-day warnings
+  if (isNighttime) {
+    warnings.push("Night-time riding — limited visibility, significantly higher risk");
+  } else if (isDusk || isDawn) {
+    warnings.push("Low-light conditions (dawn/dusk) — reduced visibility, use hi-vis gear");
+  }
+
+  // Weather warnings
   if (windSpeed > 40) {
     warnings.push("Strong winds may spook horses and make riding hazardous");
   }
@@ -129,12 +151,32 @@ export function getRidingAdvice(weather: WeatherData): RidingAdvice {
     warnings.push("Light rain — monitor footing and reduce speed");
   }
 
-  // Excellent conditions (must be checked AFTER warnings are built)
+  // Unsafe conditions (checked before excellent so safety always wins)
+  if (
+    isNighttime ||
+    windSpeed > 50 ||
+    temperature > 38 ||
+    temperature < -10 ||
+    precipitation > 15
+  ) {
+    return {
+      suitable: false,
+      level: "unsafe",
+      message: isNighttime
+        ? "Night-time riding is not recommended — darkness significantly increases risk for both horse and rider. Wait for daylight before riding outdoors."
+        : "Outdoor riding is not safe in these conditions. Stay off the horse or confine all activity to a covered arena. Safety must come first.",
+      warnings,
+    };
+  }
+
+  // Excellent conditions (must be checked AFTER warnings and unsafe are handled)
   if (
     temperature >= 15 &&
     temperature <= 25 &&
     windSpeed < 15 &&
-    precipitation === 0
+    precipitation === 0 &&
+    !isDusk &&
+    !isDawn
   ) {
     return {
       suitable: true,
@@ -145,28 +187,14 @@ export function getRidingAdvice(weather: WeatherData): RidingAdvice {
     };
   }
 
-
-  if (
-    windSpeed > 50 ||
-    temperature > 38 ||
-    temperature < -10 ||
-    precipitation > 15
-  ) {
-    return {
-      suitable: false,
-      level: "unsafe",
-      message:
-        "Outdoor riding is not safe in these conditions. Stay off the horse or confine all activity to a covered arena. Safety must come first.",
-      warnings,
-    };
-  }
-
   // Poor conditions — outdoor riding strongly discouraged
   if (
     windSpeed > 35 ||
     temperature > 32 ||
     temperature < 0 ||
-    precipitation > 5
+    precipitation > 5 ||
+    isDusk ||
+    isDawn
   ) {
     return {
       suitable: false,
@@ -174,7 +202,9 @@ export function getRidingAdvice(weather: WeatherData): RidingAdvice {
       message:
         precipitation > 5
           ? "Heavy rain makes outdoor riding inadvisable — wet ground is slippery and dangerous. Stick to indoor work or groundwork in a covered area."
-          : "Outdoor conditions are poor. Keep any sessions short, stay in the arena, and monitor your horse closely throughout.",
+          : isDusk || isDawn
+            ? "Low-light conditions make outdoor riding risky. If you must ride, use hi-vis equipment and stick to familiar, safe terrain."
+            : "Outdoor conditions are poor. Keep any sessions short, stay in the arena, and monitor your horse closely throughout.",
       warnings,
     };
   }

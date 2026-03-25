@@ -215,7 +215,7 @@ function WeatherContent() {
           Weather &amp; Riding Conditions
         </h1>
         <p className="text-muted-foreground mt-1">
-          Real-time weather data with intelligent riding recommendations
+          Real-time weather data with intelligent riding recommendations, including time-of-day and precipitation analysis
         </p>
       </div>
 
@@ -295,21 +295,28 @@ function WeatherContent() {
               <div className="flex items-start gap-3">
                 {getRecommendationIcon(currentWeather.advice.level)}
                 <div className="flex-1">
-                  <div className="font-semibold text-lg capitalize mb-2">
-                    {currentWeather.advice.level} Riding Conditions
+                  <div className="font-semibold text-lg capitalize mb-1">
+                    {currentWeather.advice.level === "unsafe"
+                      ? "Not Safe"
+                      : `${currentWeather.advice.level.charAt(0).toUpperCase() + currentWeather.advice.level.slice(1)}`}{" "}
+                    Riding Conditions
+                  </div>
+                  <div className="text-xs font-medium opacity-70 mb-3 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    Assessment based on current time ({new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}) and live weather
                   </div>
                   <p className="text-sm mb-3">
                     {currentWeather.advice.message}
                   </p>
                   {currentWeather.advice.warnings.length > 0 && (
                     <div className="space-y-1">
-                      <div className="font-medium text-sm">Warnings:</div>
+                      <div className="font-medium text-sm">Active Warnings:</div>
                       {currentWeather.advice.warnings.map((warning, i) => (
                         <div
                           key={i}
                           className="text-sm flex items-center gap-2"
                         >
-                          <AlertTriangle className="w-4 h-4" />
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
                           {warning}
                         </div>
                       ))}
