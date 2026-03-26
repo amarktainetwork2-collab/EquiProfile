@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { DashboardLayout } from "../components/DashboardLayout";
 import { Button } from "../components/ui/button";
 import {
@@ -38,8 +38,21 @@ import {
   Trash2,
   Navigation,
   Gauge,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  MapContainer,
+  TileLayer,
+  Polyline,
+  Marker,
+  Popup,
+  useMap,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface GpsPoint {
   lat: number;
@@ -48,39 +61,36 @@ interface GpsPoint {
   speed?: number;
 }
 
-interface RideRecord {
-  id: string;
-  name: string;
-  horseId?: number;
-  horseName?: string;
-  startTime: number;
-  endTime?: number;
-  duration: number; // seconds
-  distance: number; // meters
-  avgSpeed: number; // km/h
-  maxSpeed: number; // km/h
-  points: GpsPoint[];
-  notes?: string;
-  date: string;
-}
+// ─── Leaflet icon fix (bundlers strip default icon URLs) ─────────────────────
+const defaultIcon = L.icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
-const STORAGE_KEY = "equiprofile-rides";
+const startIcon = L.divIcon({
+  className: "",
+  html: '<div style="background:#22c55e;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)"></div>',
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
+});
 
-function loadRides(): RideRecord[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-}
+const riderIcon = L.divIcon({
+  className: "",
+  html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(59,130,246,0.5)"></div>',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+});
 
-function saveRides(rides: RideRecord[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(rides));
-}
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function calculateDistance(p1: GpsPoint, p2: GpsPoint): number {
-  const R = 6371000; // Earth's radius in meters
+  const R = 6371000;
   const dLat = ((p2.lat - p1.lat) * Math.PI) / 180;
   const dLng = ((p2.lng - p1.lng) * Math.PI) / 180;
   const a =
@@ -102,31 +112,203 @@ function formatDuration(seconds: number): string {
   return `${s}s`;
 }
 
-const GPS_NOISE_THRESHOLD_METERS = 2; // Filter out GPS drift to avoid inflating distance
+const GPS_NOISE_THRESHOLD_METERS = 2;
 
 function formatDistance(meters: number): string {
   if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
   return `${Math.round(meters)} m`;
 }
 
+// ─── Map sub-components ──────────────────────────────────────────────────────
+
+/** Keeps the map centred on the latest GPS position while tracking */
+function MapFollower({ position }: { position: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.setView(position, map.getZoom(), { animate: true });
+    }
+  }, [position, map]);
+  return null;
+}
+
+/** Fits map bounds to a polyline on mount */
+function FitBounds({ points }: { points: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (points.length > 1) {
+      const bounds = L.latLngBounds(points.map(([lat, lng]) => [lat, lng]));
+      map.fitBounds(bounds, { padding: [30, 30] });
+    } else if (points.length === 1) {
+      map.setView(points[0], 15);
+    }
+  }, [points, map]);
+  return null;
+}
+
+// ─── Live Map ────────────────────────────────────────────────────────────────
+
+function LiveMap({
+  points,
+  isTracking,
+}: {
+  points: GpsPoint[];
+  isTracking: boolean;
+}) {
+  const positions = useMemo<[number, number][]>(
+    () => points.map((p) => [p.lat, p.lng]),
+    [points],
+  );
+
+  const lastPosition =
+    positions.length > 0 ? positions[positions.length - 1] : null;
+  const firstPosition = positions.length > 0 ? positions[0] : null;
+  const center: [number, number] = lastPosition || [51.505, -0.09];
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden border"
+      style={{ height: "300px" }}
+    >
+      <MapContainer
+        center={center}
+        zoom={15}
+        scrollWheelZoom={true}
+        style={{ height: "100%", width: "100%" }}
+        zoomControl={false}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {positions.length > 1 && (
+          <Polyline
+            positions={positions}
+            pathOptions={{ color: "#3b82f6", weight: 4, opacity: 0.8 }}
+          />
+        )}
+        {firstPosition && (
+          <Marker position={firstPosition} icon={startIcon}>
+            <Popup>Start</Popup>
+          </Marker>
+        )}
+        {lastPosition && isTracking && (
+          <Marker position={lastPosition} icon={riderIcon}>
+            <Popup>Current position</Popup>
+          </Marker>
+        )}
+        {lastPosition && !isTracking && positions.length > 1 && (
+          <Marker position={lastPosition} icon={defaultIcon}>
+            <Popup>End</Popup>
+          </Marker>
+        )}
+        {isTracking && <MapFollower position={lastPosition} />}
+      </MapContainer>
+    </div>
+  );
+}
+
+// ─── Ride History Map (static view of a saved ride) ──────────────────────────
+
+function RideRouteMap({ routeData }: { routeData: string }) {
+  const points = useMemo<GpsPoint[]>(() => {
+    try {
+      return JSON.parse(routeData);
+    } catch {
+      return [];
+    }
+  }, [routeData]);
+
+  const positions = useMemo<[number, number][]>(
+    () => points.map((p) => [p.lat, p.lng]),
+    [points],
+  );
+
+  if (positions.length === 0) return null;
+
+  const center: [number, number] = positions[0];
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden border"
+      style={{ height: "250px" }}
+    >
+      <MapContainer
+        center={center}
+        zoom={14}
+        scrollWheelZoom={true}
+        style={{ height: "100%", width: "100%" }}
+        zoomControl={false}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {positions.length > 1 && (
+          <Polyline
+            positions={positions}
+            pathOptions={{ color: "#6366f1", weight: 4, opacity: 0.8 }}
+          />
+        )}
+        {positions.length > 0 && (
+          <Marker position={positions[0]} icon={startIcon}>
+            <Popup>Start</Popup>
+          </Marker>
+        )}
+        {positions.length > 1 && (
+          <Marker position={positions[positions.length - 1]} icon={defaultIcon}>
+            <Popup>End</Popup>
+          </Marker>
+        )}
+        <FitBounds points={positions} />
+      </MapContainer>
+    </div>
+  );
+}
+
+// ─── Main content ────────────────────────────────────────────────────────────
+
 function RideTrackingContent() {
+  const utils = trpc.useUtils();
   const [isTracking, setIsTracking] = useState(false);
   const [currentPoints, setCurrentPoints] = useState<GpsPoint[]>([]);
   const [currentDistance, setCurrentDistance] = useState(0);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [currentSpeed, setCurrentSpeed] = useState(0);
   const [maxSpeed, setMaxSpeed] = useState(0);
-  const [rides, setRides] = useState<RideRecord[]>(loadRides());
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [rideName, setRideName] = useState("");
   const [rideHorseId, setRideHorseId] = useState("");
   const [rideNotes, setRideNotes] = useState("");
+  const [viewingRideId, setViewingRideId] = useState<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const watchIdRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pendingPointsRef = useRef<GpsPoint[]>([]);
 
   const { data: horses } = trpc.horses.list.useQuery();
+  const { data: rides = [], isLoading: ridesLoading } =
+    trpc.rides.list.useQuery();
+
+  const createRideMutation = trpc.rides.create.useMutation({
+    onSuccess: async () => {
+      await utils.rides.list.invalidate();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to save ride");
+    },
+  });
+
+  const deleteRideMutation = trpc.rides.delete.useMutation({
+    onSuccess: async () => {
+      await utils.rides.list.invalidate();
+      toast.success("Ride deleted");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete ride");
+    },
+  });
+
+  // ── GPS tracking ────────────────────────────────────────────────────────────
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
@@ -139,7 +321,6 @@ function RideTrackingContent() {
     setElapsedTime(0);
     setCurrentSpeed(0);
     setMaxSpeed(0);
-    pendingPointsRef.current = [];
     startTimeRef.current = Date.now();
 
     const watchId = navigator.geolocation.watchPosition(
@@ -150,27 +331,21 @@ function RideTrackingContent() {
           timestamp: position.timestamp,
           speed:
             position.coords.speed !== null && position.coords.speed >= 0
-              ? position.coords.speed * 3.6 // Convert m/s to km/h
+              ? position.coords.speed * 3.6
               : undefined,
         };
 
-        pendingPointsRef.current.push(point);
-
         setCurrentPoints((prev) => {
           const newPoints = [...prev, point];
-
-          // Calculate distance
           if (prev.length > 0) {
             const dist = calculateDistance(prev[prev.length - 1], point);
             if (dist > GPS_NOISE_THRESHOLD_METERS) {
               setCurrentDistance((d) => d + dist);
             }
           }
-
           return newPoints;
         });
 
-        // Update speed
         if (point.speed !== undefined && point.speed >= 0) {
           setCurrentSpeed(point.speed);
           setMaxSpeed((prev) => Math.max(prev, point.speed || 0));
@@ -180,16 +355,10 @@ function RideTrackingContent() {
         console.warn("GPS error:", error.message);
         toast.error("GPS error: " + error.message);
       },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 10000,
-      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 },
     );
 
     watchIdRef.current = watchId;
-
-    // Start elapsed time timer
     timerRef.current = setInterval(() => {
       setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
     }, 1000);
@@ -212,28 +381,22 @@ function RideTrackingContent() {
   }, []);
 
   const saveRide = useCallback(() => {
-    const ride: RideRecord = {
-      id: Date.now().toString(),
-      name: rideName || `Ride on ${new Date().toLocaleDateString()}`,
+    const avgSpd =
+      elapsedTime > 0 ? currentDistance / 1000 / (elapsedTime / 3600) : 0;
+
+    createRideMutation.mutate({
       horseId: rideHorseId ? parseInt(rideHorseId) : undefined,
-      horseName: rideHorseId
-        ? horses?.find((h) => h.id === parseInt(rideHorseId))?.name
-        : undefined,
-      startTime: startTimeRef.current,
-      endTime: Date.now(),
+      name: rideName || `Ride on ${new Date().toLocaleDateString()}`,
+      startTime: new Date(startTimeRef.current).toISOString(),
+      endTime: new Date().toISOString(),
       duration: elapsedTime,
       distance: currentDistance,
-      avgSpeed:
-        elapsedTime > 0 ? currentDistance / 1000 / (elapsedTime / 3600) : 0,
+      avgSpeed: avgSpd,
       maxSpeed,
-      points: currentPoints,
+      routeData: JSON.stringify(currentPoints),
       notes: rideNotes || undefined,
-      date: new Date().toISOString(),
-    };
+    });
 
-    const updatedRides = [ride, ...rides];
-    setRides(updatedRides);
-    saveRides(updatedRides);
     setShowSaveDialog(false);
     setRideName("");
     setRideHorseId("");
@@ -241,7 +404,7 @@ function RideTrackingContent() {
     setCurrentPoints([]);
     setCurrentDistance(0);
     setElapsedTime(0);
-    toast.success("Ride saved successfully!");
+    toast.success("Ride saved!");
   }, [
     rideName,
     rideHorseId,
@@ -250,18 +413,14 @@ function RideTrackingContent() {
     currentDistance,
     maxSpeed,
     currentPoints,
-    rides,
-    horses,
+    createRideMutation,
   ]);
 
   const deleteRide = useCallback(
-    (id: string) => {
-      const updatedRides = rides.filter((r) => r.id !== id);
-      setRides(updatedRides);
-      saveRides(updatedRides);
-      toast.success("Ride deleted");
+    (id: number) => {
+      deleteRideMutation.mutate({ id });
     },
-    [rides],
+    [deleteRideMutation],
   );
 
   // Cleanup on unmount
@@ -276,18 +435,32 @@ function RideTrackingContent() {
     };
   }, []);
 
+  const getHorseName = (horseId: number | null | undefined) => {
+    if (!horseId) return null;
+    return horses?.find((h) => h.id === horseId)?.name ?? null;
+  };
+
+  const viewingRide = viewingRideId
+    ? rides.find((r) => r.id === viewingRideId)
+    : null;
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-3xl font-bold text-foreground">
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
           GPS Ride Tracking
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Track your rides and training routes with GPS
+        <p className="text-muted-foreground mt-1 text-sm">
+          Track your rides in real time with GPS and see your route on the map
         </p>
       </div>
 
-      {/* Active Tracking Card */}
+      {/* ── Live Map (shown while tracking or if we have points) ──────────── */}
+      {(isTracking || currentPoints.length > 0) && (
+        <LiveMap points={currentPoints} isTracking={isTracking} />
+      )}
+
+      {/* ── Active Tracking / Start Card ─────────────────────────────────── */}
       <Card
         className={
           isTracking
@@ -295,8 +468,8 @@ function RideTrackingContent() {
             : ""
         }
       >
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Navigation
               className={`w-5 h-5 ${isTracking ? "text-green-500 animate-pulse" : "text-muted-foreground"}`}
             />
@@ -310,55 +483,48 @@ function RideTrackingContent() {
         </CardHeader>
         <CardContent>
           {isTracking && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
               <div className="text-center p-3 bg-background rounded-lg border">
-                <Clock className="w-5 h-5 mx-auto text-blue-500 mb-1" />
-                <div className="text-xl font-bold font-mono">
+                <Clock className="w-4 h-4 mx-auto text-blue-500 mb-1" />
+                <div className="text-lg font-bold font-mono">
                   {formatDuration(elapsedTime)}
                 </div>
-                <div className="text-xs text-muted-foreground">Duration</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Duration
+                </div>
               </div>
               <div className="text-center p-3 bg-background rounded-lg border">
-                <Route className="w-5 h-5 mx-auto text-green-500 mb-1" />
-                <div className="text-xl font-bold">
+                <Route className="w-4 h-4 mx-auto text-green-500 mb-1" />
+                <div className="text-lg font-bold">
                   {formatDistance(currentDistance)}
                 </div>
-                <div className="text-xs text-muted-foreground">Distance</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Distance
+                </div>
               </div>
               <div className="text-center p-3 bg-background rounded-lg border">
-                <Gauge className="w-5 h-5 mx-auto text-orange-500 mb-1" />
-                <div className="text-xl font-bold">
+                <Gauge className="w-4 h-4 mx-auto text-orange-500 mb-1" />
+                <div className="text-lg font-bold">
                   {currentSpeed.toFixed(1)} km/h
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Current Speed
-                </div>
+                <div className="text-[11px] text-muted-foreground">Speed</div>
               </div>
               <div className="text-center p-3 bg-background rounded-lg border">
-                <Activity className="w-5 h-5 mx-auto text-purple-500 mb-1" />
-                <div className="text-xl font-bold">
+                <Activity className="w-4 h-4 mx-auto text-purple-500 mb-1" />
+                <div className="text-lg font-bold">
                   {maxSpeed.toFixed(1)} km/h
                 </div>
-                <div className="text-xs text-muted-foreground">Max Speed</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Max Speed
+                </div>
               </div>
             </div>
           )}
 
-          {/* Route Preview */}
-          {isTracking && currentPoints.length > 1 && (
-            <div className="mb-6 rounded-lg border overflow-hidden bg-muted/50 p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin className="w-4 h-4 text-green-500" />
-                <span className="text-sm font-medium">
-                  {currentPoints.length} GPS points recorded
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Start: {currentPoints[0].lat.toFixed(5)},{" "}
-                {currentPoints[0].lng.toFixed(5)} → Current:{" "}
-                {currentPoints[currentPoints.length - 1].lat.toFixed(5)},{" "}
-                {currentPoints[currentPoints.length - 1].lng.toFixed(5)}
-              </div>
+          {isTracking && currentPoints.length > 0 && (
+            <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
+              <MapPin className="w-3.5 h-3.5 text-green-500" />
+              <span>{currentPoints.length} GPS points recorded</span>
             </div>
           )}
 
@@ -375,19 +541,21 @@ function RideTrackingContent() {
             ) : (
               <Button size="lg" variant="destructive" onClick={stopTracking}>
                 <Square className="w-5 h-5 mr-2" />
-                Stop & Save
+                Stop &amp; Save
               </Button>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Save Dialog */}
+      {/* ── Save Dialog ──────────────────────────────────────────────────── */}
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Save Ride</DialogTitle>
-            <DialogDescription className="sr-only">Manage ride session details</DialogDescription>
+            <DialogDescription className="sr-only">
+              Save ride session details
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 p-3 bg-muted rounded-lg text-sm">
@@ -409,7 +577,9 @@ function RideTrackingContent() {
               </div>
               <div>
                 <span className="text-muted-foreground">Max Speed:</span>{" "}
-                <span className="font-medium">{maxSpeed.toFixed(1)} km/h</span>
+                <span className="font-medium">
+                  {maxSpeed.toFixed(1)} km/h
+                </span>
               </div>
             </div>
             <div>
@@ -445,9 +615,13 @@ function RideTrackingContent() {
               />
             </div>
             <div className="flex gap-3">
-              <Button onClick={saveRide} className="flex-1">
+              <Button
+                onClick={saveRide}
+                className="flex-1"
+                disabled={createRideMutation.isPending}
+              >
                 <Save className="w-4 h-4 mr-2" />
-                Save Ride
+                {createRideMutation.isPending ? "Saving…" : "Save Ride"}
               </Button>
               <Button
                 variant="outline"
@@ -460,19 +634,21 @@ function RideTrackingContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Ride History */}
+      {/* ── Ride History ─────────────────────────────────────────────────── */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Route className="w-5 h-5 text-indigo-500" />
             Ride History
           </CardTitle>
-          <CardDescription>
-            Your recorded rides stored locally on this device
-          </CardDescription>
+          <CardDescription>Your recorded rides</CardDescription>
         </CardHeader>
         <CardContent>
-          {rides.length === 0 ? (
+          {ridesLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Loading rides…
+            </div>
+          ) : rides.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Navigation className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p>No rides recorded yet</p>
@@ -485,34 +661,48 @@ function RideTrackingContent() {
               {rides.map((ride) => (
                 <div
                   key={ride.id}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                  className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                      <Route className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{ride.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(ride.date).toLocaleDateString()} •{" "}
-                        {ride.horseName || "No horse assigned"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right text-sm hidden md:block">
-                      <div className="font-medium">
-                        {formatDistance(ride.distance)}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg shrink-0">
+                        <Route className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                       </div>
-                      <div className="text-muted-foreground text-xs">
-                        {formatDuration(ride.duration)} •{" "}
-                        {ride.avgSpeed.toFixed(1)} km/h avg
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{ride.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(ride.createdAt).toLocaleDateString()} •{" "}
+                          {getHorseName(ride.horseId) || "No horse"}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right text-sm hidden md:block">
+                        <div className="font-medium">
+                          {formatDistance(ride.distance)}
+                        </div>
+                        <div className="text-muted-foreground text-xs">
+                          {formatDuration(ride.duration)} •{" "}
+                          {(ride.avgSpeed / 100).toFixed(1)} km/h avg
+                        </div>
+                      </div>
                       <Badge variant="outline" className="text-xs md:hidden">
                         {formatDistance(ride.distance)}
                       </Badge>
+                      {ride.routeData && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="View route"
+                          onClick={() =>
+                            setViewingRideId(
+                              viewingRideId === ride.id ? null : ride.id,
+                            )
+                          }
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         size="icon"
                         variant="ghost"
@@ -523,6 +713,11 @@ function RideTrackingContent() {
                       </Button>
                     </div>
                   </div>
+                  {viewingRideId === ride.id && ride.routeData && (
+                    <div className="mt-3">
+                      <RideRouteMap routeData={ride.routeData} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
