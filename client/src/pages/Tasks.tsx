@@ -41,6 +41,7 @@ import { toast } from "sonner";
 import { useRealtimeModule } from "@/hooks/useRealtime";
 
 function TasksContent() {
+  const utils = trpc.useUtils();
   const { data: tasks, isLoading } = trpc.tasks.list.useQuery();
   const { data: horses } = trpc.horses.list.useQuery();
   const [localTasks, setLocalTasks] = useState(tasks || []);
@@ -105,9 +106,10 @@ function TasksContent() {
   }, [tasks]);
 
   const createMutation = trpc.tasks.create.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       setIsCreateOpen(false);
       resetForm();
+      await utils.tasks.list.invalidate();
     },
     onError: (error) => {
       toast.error(error.message || "Failed to create task");
@@ -115,9 +117,10 @@ function TasksContent() {
   });
 
   const updateMutation = trpc.tasks.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       setIsEditOpen(false);
       setEditingTask(null);
+      await utils.tasks.list.invalidate();
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update task");
@@ -125,12 +128,18 @@ function TasksContent() {
   });
 
   const completeMutation = trpc.tasks.complete.useMutation({
+    onSuccess: async () => {
+      await utils.tasks.list.invalidate();
+    },
     onError: (error) => {
       toast.error(error.message || "Failed to complete task");
     },
   });
 
   const deleteMutation = trpc.tasks.delete.useMutation({
+    onSuccess: async () => {
+      await utils.tasks.list.invalidate();
+    },
     onError: (error) => {
       toast.error(error.message || "Failed to delete task");
     },
@@ -276,7 +285,7 @@ function TasksContent() {
               New Task
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Task</DialogTitle>
               <DialogDescription>
@@ -424,7 +433,7 @@ function TasksContent() {
 
       {/* Edit Task Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
             <DialogDescription>Update the task details</DialogDescription>
