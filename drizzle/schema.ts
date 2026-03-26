@@ -71,7 +71,7 @@ export const horses = mysqlTable("horses", {
   breed: varchar("breed", { length: 100 }),
   age: int("age"),
   dateOfBirth: date("dateOfBirth"),
-  height: int("height"), // in centimeters
+  height: int("height"), // in hands × 10 (e.g. 152 = 15.2 hh)
   weight: int("weight"), // in kilograms
   color: varchar("color", { length: 50 }),
   gender: mysqlEnum("gender", ["stallion", "mare", "gelding"]),

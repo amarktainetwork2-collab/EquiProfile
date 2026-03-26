@@ -105,7 +105,7 @@ export default function Home() {
       name: "Michael Chen",
       role: "Stable Manager - 25+ Horses",
       content:
-        "Managing a large stable used to be overwhelming. EquiProfile makes it simple, organized, and efficient. The time savings alone have been incredible. Highly recommend!",
+        "Managing a large stable used to be overwhelming. EquiProfile makes it simple, organised, and efficient. The time savings alone have been incredible. Highly recommend!",
       rating: 5,
       avatar: "MC",
     },

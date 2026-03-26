@@ -825,14 +825,14 @@ function BreedingManagementContent() {
               />
             </div>
             <div>
-              <Label htmlFor="color">Color</Label>
+              <Label htmlFor="color">Colour</Label>
               <Input
                 id="color"
                 value={foalData.color}
                 onChange={(e) =>
                   setFoalData({ ...foalData, color: e.target.value })
                 }
-                placeholder="Coat color"
+                placeholder="Coat colour"
               />
             </div>
             <div>

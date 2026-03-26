@@ -375,7 +375,7 @@ function EquinePassportContent() {
               ? new Date(selectedHorse.dateOfBirth).toISOString()
               : undefined,
             height: selectedHorse.height
-              ? String(selectedHorse.height)
+              ? `${(selectedHorse.height / 10).toFixed(1)} hh`
               : undefined,
             passportNumber: passportData.passportNumber || undefined,
             feiId: passportData.feiId || undefined,

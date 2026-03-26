@@ -115,7 +115,7 @@ function HorseFormContent() {
         dateOfBirth: horse.dateOfBirth
           ? new Date(horse.dateOfBirth).toISOString().split("T")[0]
           : "",
-        height: horse.height?.toString() || "",
+        height: horse.height ? (horse.height / 10).toString() : "",
         weight: horse.weight?.toString() || "",
         color: horse.color || "",
         gender: (horse.gender as "" | "stallion" | "mare" | "gelding") || "",
@@ -204,7 +204,7 @@ function HorseFormContent() {
       breed: formData.breed || undefined,
       age: formData.age ? parseInt(formData.age) : undefined,
       dateOfBirth: formData.dateOfBirth || undefined,
-      height: formData.height ? parseInt(formData.height) : undefined,
+      height: formData.height ? Math.round(parseFloat(formData.height) * 10) : undefined,
       weight: formData.weight ? parseInt(formData.weight) : undefined,
       color: formData.color || undefined,
       gender: formData.gender || undefined,
@@ -339,17 +339,18 @@ function HorseFormContent() {
 
             <div className="grid sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="height">Height (cm)</Label>
+                <Label htmlFor="height">Height (hh)</Label>
                 <Input
                   id="height"
                   type="number"
                   min="0"
-                  max="250"
+                  max="25"
+                  step="0.1"
                   value={formData.height}
                   onChange={(e) =>
                     setFormData({ ...formData, height: e.target.value })
                   }
-                  placeholder="Height in cm"
+                  placeholder="e.g. 15.2"
                 />
               </div>
               <div className="space-y-2">
@@ -367,7 +368,7 @@ function HorseFormContent() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="color">Color</Label>
+                <Label htmlFor="color">Colour</Label>
                 <Input
                   id="color"
                   value={formData.color}
