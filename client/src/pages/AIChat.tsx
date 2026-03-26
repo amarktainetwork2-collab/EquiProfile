@@ -86,8 +86,9 @@ export default function AIChat() {
 
   const handleSaveToCalendar = (note: { title?: string | null; content: string; createdAt: string | Date }) => {
     const title = note.title || "Voice Note";
-    const startDate = new Date();
-    startDate.setHours(startDate.getHours() + 1, 0, 0, 0);
+    // Schedule for the next whole hour (e.g., if it's 2:35 PM, schedule for 3:00 PM)
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, 0, 0, 0);
     saveToCalendar.mutate({
       title,
       description: note.content,
