@@ -99,6 +99,8 @@ import {
   InsertNutritionPlan,
   notes,
   InsertNote,
+  rides,
+  InsertRide,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -2351,6 +2353,44 @@ export async function deleteNote(id: number, userId: number) {
   if (!db) throw new Error("Database not available");
 
   await db.delete(notes).where(and(eq(notes.id, id), eq(notes.userId, userId)));
+}
+
+// ============ RIDES (GPS Tracking) ============
+export async function createRide(data: InsertRide) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(rides).values(data);
+  return (result[0] as ResultSetHeader).insertId as number;
+}
+
+export async function getRidesByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(rides)
+    .where(eq(rides.userId, userId))
+    .orderBy(desc(rides.createdAt));
+}
+
+export async function getRideById(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const results = await db
+    .select()
+    .from(rides)
+    .where(and(eq(rides.id, id), eq(rides.userId, userId)));
+  return results[0] || null;
+}
+
+export async function deleteRide(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(rides).where(and(eq(rides.id, id), eq(rides.userId, userId)));
 }
 
 // ============ EVENT REMINDERS ============

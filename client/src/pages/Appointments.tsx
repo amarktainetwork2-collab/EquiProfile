@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useRealtimeModule } from "../hooks/useRealtime";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import DashboardLayout from "../components/DashboardLayout";
 
 function AppointmentsContent() {
   const { toast } = useToast();
+  const utils = trpc.useUtils();
   const [open, setOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
 
@@ -40,11 +41,11 @@ function AppointmentsContent() {
   );
 
   // Update local state when data changes
-  useState(() => {
+  useEffect(() => {
     if (appointments) {
       setLocalAppointments(appointments);
     }
-  });
+  }, [appointments]);
 
   // Real-time updates
   useRealtimeModule("appointments", (action, data) => {
@@ -140,7 +141,7 @@ function AppointmentsContent() {
 
       setOpen(false);
       resetForm();
-      refetch();
+      await utils.appointments.list.invalidate();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -174,7 +175,7 @@ function AppointmentsContent() {
       try {
         await deleteMutation.mutateAsync({ id });
         toast({ title: "Appointment deleted successfully" });
-        refetch();
+        await utils.appointments.list.invalidate();
       } catch (error: any) {
         toast({
           title: "Error",

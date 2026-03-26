@@ -133,6 +133,15 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
+
+  /* PWA safe-area support for notched devices and standalone mode */
+  :root {
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+  }
+
   h1,
   h2,
   h3,

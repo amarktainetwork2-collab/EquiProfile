@@ -509,7 +509,7 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className={`flex-1 p-3 sm:p-5 md:p-6 ${isMobile ? "pb-20" : ""}`}>
+        <main className={`flex-1 p-3 sm:p-5 md:p-6`} style={isMobile ? { paddingBottom: 'calc(5rem + var(--safe-area-bottom, 0px))' } : undefined}>
           {children}
         </main>
 
@@ -517,6 +517,7 @@ function DashboardLayoutContent({
         {isMobile && (
           <nav
             className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+            style={{ paddingBottom: 'var(--safe-area-bottom, 0px)' }}
             aria-label="Mobile navigation"
           >
             <div className="flex items-stretch h-16">
@@ -567,7 +568,7 @@ function DashboardLayoutContent({
                       Modules
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="space-y-4 pb-6">
+                  <div className="space-y-4" style={{ paddingBottom: 'calc(1.5rem + var(--safe-area-bottom, 0px))' }}>
                     {moreModuleGroups.map((group) => {
                       // Filter stable-only items for non-stable users
                       const items = group.items.filter((item) => {

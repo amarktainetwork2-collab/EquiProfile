@@ -71,7 +71,7 @@ export const horses = mysqlTable("horses", {
   breed: varchar("breed", { length: 100 }),
   age: int("age"),
   dateOfBirth: date("dateOfBirth"),
-  height: int("height"), // in centimeters
+  height: int("height"), // in hands × 10 (e.g. 152 = 15.2 hh)
   weight: int("weight"), // in kilograms
   color: varchar("color", { length: 50 }),
   gender: mysqlEnum("gender", ["stallion", "mare", "gelding"]),
@@ -1170,6 +1170,29 @@ export const notes = mysqlTable("notes", {
 
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = typeof notes.$inferInsert;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GPS Ride Tracking – recorded rides with GPS route data
+// ─────────────────────────────────────────────────────────────────────────────
+export const rides = mysqlTable("rides", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  horseId: int("horseId"),
+  name: varchar("name", { length: 200 }).notNull(),
+  startTime: timestamp("startTime").notNull(),
+  endTime: timestamp("endTime"),
+  duration: int("duration").notNull(), // seconds
+  distance: int("distance").notNull(), // meters (stored as integer)
+  avgSpeed: int("avgSpeed").default(0).notNull(), // km/h * 100 (store as int for precision)
+  maxSpeed: int("maxSpeed").default(0).notNull(), // km/h * 100
+  // Route points stored as JSON: [{lat,lng,timestamp,speed?}]
+  routeData: text("routeData"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Ride = typeof rides.$inferSelect;
+export type InsertRide = typeof rides.$inferInsert;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sales chat leads – persisted from the floating chat widget

@@ -163,7 +163,7 @@ export default function PrivacyPage() {
                       Respond to your comments and questions
                     </li>
                     <li className="text-gray-300">
-                      Monitor and analyze usage patterns
+                      Monitor and analyse usage patterns
                     </li>
                     <li className="text-gray-300">
                       Detect and prevent fraud or abuse

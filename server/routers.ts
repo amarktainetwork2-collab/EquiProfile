@@ -2464,6 +2464,59 @@ Format your response as JSON with keys: recommendation, explanation, precautions
       }),
   }),
 
+  // GPS Ride Tracking
+  rides: router({
+    list: subscribedProcedure.query(async ({ ctx }) => {
+      return db.getRidesByUserId(ctx.user!.id);
+    }),
+
+    get: subscribedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getRideById(input.id, ctx.user!.id);
+      }),
+
+    create: subscribedProcedure
+      .input(
+        z.object({
+          horseId: z.number().optional(),
+          name: z.string().min(1).max(200),
+          startTime: z.string(), // ISO date string
+          endTime: z.string().optional(),
+          duration: z.number().min(0),
+          distance: z.number().min(0),
+          avgSpeed: z.number().min(0),
+          maxSpeed: z.number().min(0),
+          routeData: z.string().optional(), // JSON array of GPS points
+          notes: z.string().max(10000).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createRide({
+          userId: ctx.user!.id,
+          horseId: input.horseId ?? null,
+          name: input.name,
+          startTime: new Date(input.startTime),
+          endTime: input.endTime ? new Date(input.endTime) : null,
+          duration: input.duration,
+          distance: Math.round(input.distance),
+          avgSpeed: Math.round(input.avgSpeed * 100),
+          maxSpeed: Math.round(input.maxSpeed * 100),
+          routeData: input.routeData ?? null,
+          notes: input.notes ?? null,
+        });
+
+        return { id };
+      }),
+
+    delete: subscribedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteRide(input.id, ctx.user!.id);
+        return { success: true };
+      }),
+  }),
+
   // Admin routes
   admin: router({
     // User management

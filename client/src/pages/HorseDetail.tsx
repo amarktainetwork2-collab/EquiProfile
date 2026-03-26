@@ -138,14 +138,14 @@ function HorseDetailContent() {
             <div className="grid sm:grid-cols-2 gap-4">
               {horse.color && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Color</p>
+                  <p className="text-sm text-muted-foreground">Colour</p>
                   <p className="font-medium">{horse.color}</p>
                 </div>
               )}
               {horse.height && (
                 <div>
                   <p className="text-sm text-muted-foreground">Height</p>
-                  <p className="font-medium">{horse.height} cm</p>
+                  <p className="font-medium">{(horse.height / 10).toFixed(1)} hh</p>
                 </div>
               )}
               {horse.weight && (
