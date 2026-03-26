@@ -2639,6 +2639,7 @@ Format your response as JSON with keys: recommendation, explanation, precautions
         const prefs = parseUserPrefs(targetUser.preferences);
         prefs.freeAccess = false;
         prefs.bothDashboardsUnlocked = false;
+        prefs.planTier = "pro";
         await db.updateUser(input.userId, {
           subscriptionStatus: "trial",
           preferences: JSON.stringify(prefs),
