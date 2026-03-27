@@ -463,7 +463,7 @@ function DashboardContent() {
         </div>
 
         {/* Quick action pills */}
-        <div className="relative mt-4 flex gap-2 overflow-x-auto pb-0.5 scrollbar-none -mx-1 px-1">
+        <div className="relative mt-4 flex flex-wrap gap-2">
           {quickActions.map((action) => {
             const ActionIcon = action.icon;
             return (
