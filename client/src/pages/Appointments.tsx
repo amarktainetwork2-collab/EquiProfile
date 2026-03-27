@@ -373,25 +373,7 @@ function AppointmentsContent() {
                 </div>
               </div>
 
-              <div>
-                <Label>Reminder</Label>
-                <Select
-                  value={formData.reminder}
-                  onValueChange={(v) =>
-                    setFormData({ ...formData, reminder: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="No reminder" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No reminder</SelectItem>
-                    <SelectItem value="1day">1 day before</SelectItem>
-                    <SelectItem value="3days">3 days before</SelectItem>
-                    <SelectItem value="1week">1 week before</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Reminder feature — removed until backend scheduler is implemented */}
 
               <div>
                 <Label>Notes</Label>

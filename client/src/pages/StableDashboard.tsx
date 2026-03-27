@@ -372,7 +372,7 @@ function StableDashboardContent() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.05 }}
-        className="grid grid-cols-3 gap-3 sm:gap-4"
+        className="grid grid-cols-2 min-[480px]:grid-cols-3 gap-3 sm:gap-4"
       >
         <Link href="/horses">
           <div className="flex flex-col items-center gap-1 p-3 rounded-xl border border-rose-500/20 bg-gradient-to-br from-rose-950/40 to-pink-950/20 hover:from-rose-950/60 transition-all cursor-pointer text-center">
